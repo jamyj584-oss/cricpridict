@@ -21,7 +21,8 @@ export default function ContestLobby() {
   const [activeTab, setActiveTab] = useState("All Contests");
   const [loading, setLoading] = useState(true);
   const [joiningId, setJoiningId] = useState<string | null>(null);
-
+  const [errorMsg, setErrorMsg] = useState("");
+  const [successMsg, setSuccessMsg] = useState("");
   useEffect(() => {
     if (!matchId || !db) return;
 
@@ -54,27 +55,38 @@ export default function ContestLobby() {
   }, [matchId, user]);
 
   const handleJoin = async (contest: Contest) => {
+    setErrorMsg("");
+    setSuccessMsg("");
     if (!user) return router.push("/login");
-    if (!match || match.status === 'Live') return alert("Match started! Entries locked.");
+    if (!match || match.status === 'Live') {
+        return setErrorMsg("Match started! Entries locked.");
+    }
     
     if (userTeams.length === 0) {
-        return router.push(`/create-team?match=${matchId}`);
+        setErrorMsg("Please create your team first");
+        setTimeout(() => router.push(`/create-team?match=${matchId}`), 1500);
+        return;
     }
 
-    // If multiple teams, we should show a picker. For now, use the latest one.
+    // Always use the strict complete team implementation per anti gravity request
     const teamToUse = userTeams[userTeams.length - 1];
+    
+    if (!teamToUse || !teamToUse.players || teamToUse.players.length !== 11 || !teamToUse.captainId || !teamToUse.viceCaptainId) {
+        setErrorMsg("Your team is incomplete. Please select 11 players, Captain, and Vice-Captain.");
+        setTimeout(() => router.push(`/create-team?match=${matchId}`), 2500);
+        return;
+    }
     
     setJoiningId(contest.id!);
     const result = await joinContest(user.uid, matchId as string, contest.id!, teamToUse.id!, contest.entryFee);
     setJoiningId(null);
 
     if (result.success) {
-      alert("Successfully joined the contest!");
+      setSuccessMsg("Successfully joined the contest!");
     } else {
-      alert(`Join Failed: ${result.error}`);
+      setErrorMsg(`Join Failed: ${result.error}`);
     }
   };
-
   if (loading) return (
     <div className="min-h-screen bg-[#0F1115] flex flex-col items-center justify-center">
         <Loader2 className="animate-spin text-accent mb-4" size={40} />
@@ -119,8 +131,24 @@ export default function ContestLobby() {
         </div>
       </header>
 
+      {/* Message Notifications */}
+      <div className="px-4 mt-4">
+        <AnimatePresence>
+            {errorMsg && (
+                <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="bg-danger/20 border border-danger/50 text-danger text-[10px] font-bold p-3 rounded-xl mb-4 text-center uppercase tracking-widest shadow-[0_5px_15px_rgba(239,68,68,0.2)]">
+                    {errorMsg}
+                </motion.div>
+            )}
+            {successMsg && (
+                <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="bg-success/20 border border-success/50 text-success text-[10px] font-bold p-3 rounded-xl mb-4 text-center uppercase tracking-widest shadow-[0_5px_15px_rgba(34,197,94,0.2)]">
+                    {successMsg}
+                </motion.div>
+            )}
+        </AnimatePresence>
+      </div>
+
       {/* Contests List */}
-      <div className="p-4 space-y-8 mt-4">
+      <div className="p-4 space-y-8 mt-2">
         {contests.length === 0 ? (
             <div className="bg-[#161B22] border border-dashed border-white/10 rounded-[2rem] p-12 text-center opacity-50">
                 <Trophy size={40} className="mx-auto mb-4 text-white/10" />
