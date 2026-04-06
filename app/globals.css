@@ -1,0 +1,41 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground-rgb: 226, 232, 240; /* textMain */
+  --background-start-rgb: 20, 26, 40; /* primary */
+  --background-end-rgb: 20, 26, 40;
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: rgb(var(--background-start-rgb));
+  font-family: 'Inter', sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Custom Glassmorphism Utility */
+@layer utilities {
+  .glass-card {
+    @apply bg-secondary/80 backdrop-blur-md border border-white/10 shadow-glass rounded-xl;
+  }
+  
+  .glass-header {
+    @apply bg-primary/90 backdrop-blur-lg border-b border-white/5;
+  }
+  
+  .text-glow {
+    text-shadow: 0 0 10px rgba(118, 152, 251, 0.5);
+  }
+}
+
+/* Hide scrollbar for clean horizontal scrolls */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;  /* Firefox */
+}

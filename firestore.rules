@@ -1,0 +1,79 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper Functions
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
+
+    function isMatchLive(matchId) {
+      return get(/databases/$(database)/documents/matches/$(matchId)).data.status == 'live';
+    }
+
+    // 1. Users Collection
+    match /users/{userId} {
+      allow read: if isSignedIn() && (isOwner(userId) || isAdmin());
+      // Prevent users from directly modifying sensitive fields like walletBalance, isAdmin
+      allow update: if isSignedIn() && (
+        (isOwner(userId) && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['walletBalance', 'isAdmin', 'kycStatus'])) ||
+        isAdmin()
+      );
+      allow create: if isSignedIn() && isOwner(userId);
+    }
+
+    // 2. Core Collections (Admin Only Writes)
+    match /matches/{docId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+    match /players/{docId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+    match /contests/{docId} {
+      allow read: if isSignedIn();
+      // Allow users to update ONLY spotsFilled via atomic transaction (handled here for transaction support)
+      allow update: if isSignedIn() && (
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly(['spotsFilled']) ||
+        isAdmin()
+      );
+      allow create, delete: if isAdmin();
+    }
+    match /leaderboard/{docId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    // 3. User Fantasy Teams
+    match /teams/{teamId} {
+      allow read: if isSignedIn() && (request.auth.uid == resource.data.userId || isAdmin());
+      // Users can only create or update their own teams if match is NOT live
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid && !isMatchLive(request.resource.data.matchId);
+      allow update: if isSignedIn() && resource.data.userId == request.auth.uid && !isMatchLive(resource.data.matchId);
+      allow delete: if isSignedIn() && resource.data.userId == request.auth.uid && !isMatchLive(resource.data.matchId);
+    }
+
+    // 4. Predictions System
+    match /predictions/{predictionId} {
+      allow read: if isSignedIn() && (request.auth.uid == resource.data.userId || isAdmin());
+      // Block edits if match is LIVE
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid && !isMatchLive(request.resource.data.matchId);
+      allow update: if isSignedIn() && resource.data.userId == request.auth.uid && !isMatchLive(resource.data.matchId);
+    }
+
+    // 5. Contest Participants (Join records)
+    match /contest_participants/{docId} {
+      allow read: if isSignedIn() && (resource.data.userId == request.auth.uid || isAdmin());
+      allow create: if isSignedIn() && request.resource.data.userId == request.auth.uid;
+    }
+  }
+}
