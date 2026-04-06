@@ -7,6 +7,7 @@ export interface AppUser {
   uid: string;
   phoneNumber: string;
   walletBalance: number;
+  walletCoins?: number;
   is18Verified: boolean;
   state: string;
   kycStatus: "Pending" | "Verified" | "Rejected" | "Unsubmitted";
@@ -74,4 +75,13 @@ export interface Prediction {
   playerPredictions: Record<string, number>; // { [playerId]: count }
   updatedAt: any;
 }
-
+export interface Transaction {
+  id?: string;
+  userId: string;
+  type: 'deposit' | 'join_contest' | 'win';
+  amount: number;
+  currency: 'INR' | 'COIN';
+  status: 'Pending' | 'Success' | 'Failed';
+  description: string;
+  createdAt: any;
+}

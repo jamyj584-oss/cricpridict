@@ -30,6 +30,7 @@ export default function UserSync() {
           uid: uid!,
           phoneNumber: data.phoneNumber ?? data.phone ?? "",
           walletBalance: data.walletBalance ?? 0,
+          walletCoins: data.walletCoins ?? 0,
           kycStatus: data.kycStatus ?? "Unsubmitted",
           is18Verified: data.is18Verified ?? false,
           state: data.state ?? "Not Set",

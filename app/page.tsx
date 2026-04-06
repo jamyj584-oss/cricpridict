@@ -15,6 +15,9 @@ export default function Home() {
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<MatchStatus>("Upcoming");
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiResult, setAiResult] = useState("");
+  const [aiError, setAiError] = useState("");
 
   useEffect(() => {
     if (!db) return;
@@ -71,8 +74,8 @@ export default function Home() {
         </div>
         <div className="flex items-center gap-3">
           <button onClick={() => router.push("/wallet")} className="flex items-center gap-2 bg-[#161B22] px-3 py-1.5 rounded-full border border-white/10 text-xs font-bold hover:bg-[#1A2234] transition-colors">
-            <Wallet size={14} className="text-accent" />
-            <span>₹{user?.walletBalance ?? 0}</span>
+            <span className="text-sm">🪙</span>
+            <span>{(user?.walletCoins || 0).toLocaleString()}</span>
           </button>
           <button className="p-1 relative">
             <Bell size={20} className="text-white/80" />
@@ -107,16 +110,16 @@ export default function Home() {
       {/* Horizontal Nav Blocks (Matches, Winners, etc) */}
       <div className="grid grid-cols-4 gap-3 px-4 mb-8">
           {[
-              { icon: LayoutGrid, label: "Matches", color: "text-accent" },
-              { icon: Award, label: "Winners", color: "text-white" },
-              { icon: Award, label: "AI Picks", color: "text-accent" },
-              { icon: Trophy, label: "Rewards", color: "text-white" }
+              { icon: LayoutGrid, label: "Matches", color: "text-accent", link: "/match" },
+              { icon: Award, label: "Winners", color: "text-white", link: "/winners" },
+              { icon: Award, label: "Profile", color: "text-accent", link: "/profile" },
+              { icon: Trophy, label: "Wallet", color: "text-white", link: "/wallet" }
           ].map((item, idx) => (
-              <div key={idx} className="flex flex-col items-center gap-2">
-                  <div className="w-12 h-12 bg-[#161B22] border border-white/5 rounded-2xl flex items-center justify-center shadow-lg">
+              <div key={idx} onClick={() => router.push(item.link)} className="flex flex-col items-center gap-2 cursor-pointer group">
+                  <div className="w-12 h-12 bg-[#161B22] border border-white/5 rounded-2xl flex items-center justify-center shadow-lg group-active:scale-95 transition-transform">
                       <item.icon size={20} className={item.color} />
                   </div>
-                  <span className="text-[10px] font-bold text-textMuted uppercase tracking-wider">{item.label}</span>
+                  <span className="text-[10px] font-bold text-textMuted uppercase tracking-wider group-hover:text-white transition-colors">{item.label}</span>
               </div>
           ))}
       </div>
@@ -205,21 +208,53 @@ export default function Home() {
         )}
       </div>
 
-      {/* AI Smart Pick Implementation from 03.png */}
+      {/* AI Smart Pick Implementation */}
       <div className="p-4">
-          <div className="bg-gradient-to-r from-[#161B22] to-[#1A2234] border border-white/5 rounded-2xl p-4 flex items-center gap-4 cursor-pointer hover:border-accent/20 transition-all group">
-              <div className="w-10 h-10 bg-[#0F1115] border border-white/10 rounded-full flex items-center justify-center">
-                  <div className="w-5 h-5 bg-accent/20 rounded-full flex items-center justify-center">
-                      <Plus size={14} className="text-accent" />
+          <div 
+            onClick={() => {
+                if (aiResult) return;
+                setAiLoading(true);
+                setAiError("");
+                setTimeout(() => {
+                    if (Math.random() > 0.9) {
+                        setAiError("AI Engine busy. Please try again.");
+                        setAiLoading(false);
+                    } else {
+                        setAiResult("🔥 AI Predicts: Virat Kohli is heavily underpriced at 8.5 Credits given his historical strike rate at Wankhede.");
+                        setAiLoading(false);
+                    }
+                }, 2000);
+            }}
+            className="bg-gradient-to-r from-[#161B22] to-[#1A2234] border border-white/5 rounded-2xl p-4 flex flex-col gap-4 cursor-pointer hover:border-accent/20 transition-all group overflow-hidden relative"
+          >
+              <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 bg-[#0F1115] border border-white/10 rounded-full flex items-center justify-center shrink-0">
+                      <div className="w-5 h-5 bg-accent/20 rounded-full flex items-center justify-center">
+                          {aiLoading ? <Loader2 size={14} className="text-accent animate-spin" /> : <Plus size={14} className="text-accent" />}
+                      </div>
+                  </div>
+                  <div className="flex-1">
+                      <h4 className="text-xs font-bold text-white/90">Deep Engine Analysis</h4>
+                      <p className="text-[10px] text-textMuted mt-0.5">Generate real-time AI squad predictions based on pitch reports & form.</p>
                   </div>
               </div>
-              <div className="flex-1">
-                  <h4 className="text-xs font-bold text-white/90">AI Smart Pick</h4>
-                  <p className="text-[10px] text-textMuted mt-0.5">Algorithm suggests 74% win probability for India's top order today.</p>
-              </div>
-              <div className="text-textMuted group-hover:text-white transition-colors">
-                  <Award size={18} />
-              </div>
+
+              {/* Dynamic Expandable Content */}
+              {aiLoading && (
+                  <div className="text-[10px] text-accent animate-pulse font-bold uppercase tracking-widest pl-14">
+                      Running Neural Net Simulation...
+                  </div>
+              )}
+              {aiError && (
+                  <div className="text-[10px] text-danger font-bold uppercase tracking-widest pl-14">
+                      {aiError}
+                  </div>
+              )}
+              {aiResult && (
+                  <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} className="text-[10px] text-success/90 font-bold uppercase tracking-wider px-4 py-3 bg-success/10 rounded-xl border border-success/20 leading-relaxed mx-2">
+                      {aiResult}
+                  </motion.div>
+              )}
           </div>
       </div>
 

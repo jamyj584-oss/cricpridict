@@ -36,8 +36,9 @@ export async function joinContest(
       if (!userSnap.exists()) throw new Error("User not found");
       const userData = userSnap.data();
       
-      if (userData.walletBalance < entryFee) {
-        throw new Error("Insufficient balance");
+      const userCoins = userData.walletCoins || 0;
+      if (userCoins < entryFee) {
+        throw new Error(`Insufficient coins. You need ${entryFee} coins to join.`);
       }
 
       // 2. Get Contest Data
@@ -62,9 +63,9 @@ export async function joinContest(
         throw new Error("Match has already started. Cannot join now.");
       }
 
-      // 5. Deduct Balance & Update Stats
+      // 5. Deduct Coins & Update Stats
       transaction.update(userRef, {
-        walletBalance: (userData.walletBalance || 0) - entryFee,
+        walletCoins: userCoins - entryFee,
         joinedContests: (userData.joinedContests || 0) + 1
       });
 
@@ -81,6 +82,18 @@ export async function joinContest(
         teamId,
         entryFee,
         joinedAt: serverTimestamp()
+      });
+
+      // 8. Log Transaction Record
+      const txRef = doc(collection(db, "transactions"));
+      transaction.set(txRef, {
+        userId,
+        type: "join_contest",
+        amount: entryFee,
+        currency: "COIN",
+        status: "Success",
+        description: `Joined Contest for Match ${matchId}`,
+        createdAt: serverTimestamp()
       });
     });
 

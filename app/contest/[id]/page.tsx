@@ -111,8 +111,8 @@ export default function ContestLobby() {
             </p>
           </div>
           <div className="flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-full border border-white/5 cursor-pointer hover:bg-white/10" onClick={() => router.push('/wallet')}>
-            <Wallet size={14} className="text-accent" />
-            <span className="text-xs font-bold">₹{user?.walletBalance || 0}</span>
+            <span className="text-sm">🪙</span>
+            <span className="text-xs font-bold">{user?.walletCoins?.toLocaleString() || 0}</span>
           </div>
         </div>
 
@@ -164,19 +164,27 @@ export default function ContestLobby() {
                                     <p className="text-[10px] text-textMuted font-bold uppercase tracking-wider">Prize Pool</p>
                                     <h3 className="text-3xl font-black tracking-tighter text-white">₹{contest.prizePool?.toLocaleString()}</h3>
                                 </div>
-                                <button 
-                                    onClick={() => handleJoin(contest)}
-                                    disabled={joiningId === contest.id || match.status === 'Live'}
-                                    className={`px-8 py-3 rounded-xl font-black text-sm shadow-xl transition-all ${
-                                        joiningId === contest.id 
-                                        ? 'bg-white/10 text-white/40' 
-                                        : match.status === 'Live'
-                                        ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
-                                        : 'bg-accent text-[#0F1115] shadow-accent/10 active:scale-95'
-                                    }`}
-                                >
-                                    {joiningId === contest.id ? "..." : match.status === 'Live' ? "Details" : `₹${contest.entryFee}`}
-                                </button>
+                                <div className="flex flex-col items-end gap-1">
+                                    <div className="flex items-center gap-1.5 text-[9px] font-black uppercase tracking-widest text-[#FF5A5F] bg-[#FF5A5F]/10 px-2 py-0.5 rounded-full border border-[#FF5A5F]/20">
+                                        🔥 Entry: ₹{contest.entryFee ? (contest.entryFee / 5) : 0}
+                                    </div>
+                                    <button 
+                                        onClick={() => handleJoin(contest)}
+                                        disabled={joiningId === contest.id || match.status === 'Live'}
+                                        className={`w-full px-6 py-2.5 rounded-xl font-black text-xs shadow-xl transition-all ${
+                                            joiningId === contest.id 
+                                            ? 'bg-white/10 text-white/40' 
+                                            : match.status === 'Live'
+                                            ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
+                                            : 'bg-accent text-[#0F1115] shadow-[0_5px_15px_rgba(255,215,0,0.2)] active:scale-95'
+                                        }`}
+                                    >
+                                        {joiningId === contest.id ? "..." : match.status === 'Live' ? "Details" : `Join`}
+                                    </button>
+                                    <p className="text-[8px] text-textMuted font-bold uppercase tracking-widest mt-1 text-center w-full">
+                                        {contest.entryFee} coins used
+                                    </p>
+                                </div>
                             </div>
 
                             {/* Progress Bar */}
@@ -194,16 +202,13 @@ export default function ContestLobby() {
                             </div>
                         </div>
 
-                        {/* Footer Info Row */}
-                        <div className="bg-white/5 px-6 py-3.5 flex justify-between items-center text-[9px] font-bold uppercase tracking-widest text-textMuted/60 border-t border-white/5">
-                            <div className="flex items-center gap-2">
-                                <Trophy size={14} className="text-accent" /> Guaranteed
+                        {/* Footer Info Row with Trust Building */}
+                        <div className="bg-[#0F1115]/50 px-6 py-4 flex justify-between items-center text-[8px] font-black uppercase tracking-widest text-white/50 border-t border-white/5">
+                            <div className="flex items-center gap-1.5 text-accent">
+                                <Trophy size={12} /> 💰 LOW COMPETITION
                             </div>
-                            <div className="flex items-center gap-2">
-                                <ShieldCheck size={14} className="text-success" /> Trusted
-                            </div>
-                            <div className="flex items-center gap-2">
-                                <CheckCircle2 size={14} className="text-blue-400" /> Pro Entry
+                            <div className="flex items-center gap-1.5 text-success">
+                                <ShieldCheck size={12} /> 🎯 HIGH WINNING CHANCE
                             </div>
                         </div>
                     </div>
