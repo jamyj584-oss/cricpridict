@@ -48,7 +48,7 @@ export default function AdminContests() {
     setEditId(contest.id!);
     setMatchId(contest.matchId);
     setEntryFee(contest.entryFee || 500);
-    setPrizePool(contest.prizePool || contest.prizePoolDesc || "");
+    setPrizePool(String(contest.prizePool || ""));
     setTotalSpots(contest.totalSpots || 5000);
     setShowForm(true);
   };
@@ -165,7 +165,7 @@ export default function AdminContests() {
                  </div>
 
                  <div className="mb-4">
-                     <h3 className="text-lg font-black text-white">{contest.prizePool || contest.prizePoolDesc}</h3>
+                     <h3 className="text-lg font-black text-white">{contest.prizePool}</h3>
                      <p className="text-[10px] uppercase font-bold tracking-widest text-accent mt-1">Prize Pool</p>
                  </div>
 

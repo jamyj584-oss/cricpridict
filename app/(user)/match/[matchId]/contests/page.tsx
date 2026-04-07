@@ -154,7 +154,7 @@ export default function Contests({ params }: { params: { matchId: string } }) {
                   <div className="flex justify-between items-start mb-4">
                     <div>
                       <p className="text-xs text-textMuted font-bold uppercase tracking-wider mb-1">{contest.type}</p>
-                      <h3 className="text-2xl font-bold text-accent">₹{(contest.prizePool / 100000).toFixed(1)} Lakhs</h3>
+                      <h3 className="text-2xl font-bold text-accent">₹{(Number(contest.prizePool) / 100000).toFixed(1)} Lakhs</h3>
                     </div>
                     <div>
                       <p className="text-xs text-textMuted font-bold uppercase tracking-wider mb-1 text-right">Entry</p>
