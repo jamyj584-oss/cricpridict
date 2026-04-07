@@ -252,7 +252,7 @@ export default function ContestLobby() {
                 initial={{ y: 100 }} 
                 animate={{ y: 0 }} 
                 exit={{ y: 100 }}
-                className="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-[#0F1115] via-[#0F1115]/95 to-transparent z-50 pointer-events-none"
+                className="fixed bottom-[72px] left-0 right-0 max-w-md mx-auto p-6 bg-gradient-to-t from-[#0F1115] via-[#0F1115]/95 to-transparent z-40 pointer-events-none"
             >
                 <div className="grid grid-cols-2 gap-4 pointer-events-auto">
                     <button 

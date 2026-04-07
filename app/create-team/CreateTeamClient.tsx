@@ -391,7 +391,7 @@ export default function CreateTeamClient() {
         )}
 
         {/* Floating Bottom Navigator */}
-        <div className="fixed bottom-0 left-0 right-0 p-6 bg-gradient-to-t from-[#0F1115] z-40 to-transparent">
+        <div className="fixed bottom-0 left-0 right-0 max-w-md mx-auto p-6 bg-gradient-to-t from-[#0F1115] z-40 to-transparent">
              <div className="w-full bg-[#161B22]/90 backdrop-blur-xl border border-white/10 rounded-2xl p-4 shadow-2xl flex flex-col gap-4">
                  
                  {step === 1 && (
