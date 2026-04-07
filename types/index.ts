@@ -25,7 +25,10 @@ export interface Match {
   startTime: number; // Unix timestamp or string representation
   status: MatchStatus;
   venue?: string;
-  prizePoolDesc: string; // e.g. "₹50L mega pool"
+  prizePoolDesc?: string;
+  squadA?: string[];
+  squadB?: string[];
+  tossWinner?: string;
   scoreData?: {
     teamAScore: string; // e.g., "150/4 (15.2)"
     teamBScore: string;
@@ -64,7 +67,7 @@ export interface Contest {
   matchId: string;
   type: ContestType;
   entryFee: number;
-  prizePool: number | string; // Numeric for calculations, string for display (e.g. ₹10L)
+  prizePool: string | number; // Numeric for calculations, string for display (e.g. ₹10L)
   totalSpots: number;
   spotsFilled: number;
 }

@@ -33,8 +33,6 @@ export default function AdminPlayers() {
   // Player Form State
   const [playerName, setPlayerName] = useState("");
   const [playerRole, setPlayerRole] = useState<PlayerRole>("BAT");
-  const [playerCredits, setPlayerCredits] = useState(8.0);
-  const [playerPoints, setPlayerPoints] = useState(0);
   const [playerImage, setPlayerImage] = useState("");
 
   useEffect(() => {
@@ -64,7 +62,7 @@ export default function AdminPlayers() {
   const resetForms = () => {
     setEditId(null);
     setTeamName(""); setTeamCode(""); setTeamLogo("");
-    setPlayerName(""); setPlayerRole("BAT"); setPlayerCredits(8.0); setPlayerPoints(0); setPlayerImage("");
+    setPlayerName(""); setPlayerRole("BAT"); setPlayerImage("");
     setShowForm(false);
   };
 
@@ -80,8 +78,6 @@ export default function AdminPlayers() {
     setEditId(player.id!);
     setPlayerName(player.name);
     setPlayerRole(player.role);
-    setPlayerCredits(player.credits || 8.0);
-    setPlayerPoints(player.basePoints || 0);
     setPlayerImage(player.imageUrl || "");
     setShowForm(true);
   };
@@ -118,8 +114,6 @@ export default function AdminPlayers() {
         name: playerName,
         team: selectedTeamCode,
         role: playerRole,
-        credits: Number(playerCredits),
-        basePoints: Number(playerPoints),
         imageUrl: playerImage,
         updatedAt: serverTimestamp()
       };
@@ -200,17 +194,9 @@ export default function AdminPlayers() {
                                     <option value="WK">WICKET-KEEPER</option>
                                 </select>
                             </div>
-                            <div>
-                                <label className="text-[10px] text-textMuted uppercase tracking-widest font-black mb-2 block">Credits</label>
-                                <input type="number" step="0.1" value={playerCredits} onChange={e=>setPlayerCredits(Number(e.target.value))} required className="w-full bg-[#0F1115] border border-white/5 rounded-2xl px-5 py-4 text-sm focus:border-accent/50 outline-none transition-colors" />
-                            </div>
                             <div className="lg:col-span-2">
                                 <label className="text-[10px] text-textMuted uppercase tracking-widest font-black mb-2 block flex items-center gap-2"><ImageIcon size={12} /> Player Image URL</label>
                                 <input type="text" value={playerImage} onChange={e=>setPlayerImage(e.target.value)} className="w-full bg-[#0F1115] border border-white/5 rounded-2xl px-5 py-4 text-sm focus:border-accent/50 outline-none transition-colors" placeholder="e.g. Profile photo link" />
-                            </div>
-                            <div>
-                                <label className="text-[10px] text-textMuted uppercase tracking-widest font-black mb-2 block">Points Override</label>
-                                <input type="number" value={playerPoints} onChange={e=>setPlayerPoints(Number(e.target.value))} required className="w-full bg-[#0F1115] border border-white/5 rounded-2xl px-5 py-4 text-sm focus:border-accent/50 outline-none transition-colors" />
                             </div>
                             <div className="md:col-span-3 flex justify-end gap-3 mt-4 border-t border-white/5 pt-6">
                                 <button type="button" onClick={resetForms} className="px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest text-textMuted hover:text-white transition-colors">Discard</button>
@@ -293,16 +279,6 @@ export default function AdminPlayers() {
                                 <h3 className="text-base font-black text-white leading-tight">{player.name}</h3>
                              </div>
 
-                             <div className="mt-auto border-t border-white/5 pt-5 flex justify-between items-center">
-                                 <div className="flex flex-col">
-                                     <span className="text-[8px] uppercase tracking-widest text-textMuted flex items-center gap-1"><DollarSign size={10} className="text-accent" /> Credits</span>
-                                     <span className="text-sm font-black text-white">{player.credits}</span>
-                                 </div>
-                                 <div className="flex flex-col items-end">
-                                     <span className="text-[8px] uppercase tracking-widest text-textMuted flex items-center gap-1"><Star size={10} className="text-accent" /> Points</span>
-                                     <span className="text-sm font-black text-white">{player.basePoints}</span>
-                                 </div>
-                             </div>
                          </div>
                       ))}
                       {currentTeamPlayers.length === 0 && <div className="col-span-full py-12 text-center opacity-20 uppercase font-black text-[10px] tracking-widest border border-dashed border-white/5 rounded-[2rem]">No Players Listed</div>}

@@ -12,6 +12,8 @@ export default function AdminContests() {
   const [matches, setMatches] = useState<Match[]>([]);
   const [loading, setLoading] = useState(true);
   const [showForm, setShowForm] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [feedback, setFeedback] = useState<{ type: 'success' | 'error', msg: string } | null>(null);
   
   // Form State
   const [editId, setEditId] = useState<string | null>(null);
@@ -42,6 +44,7 @@ export default function AdminContests() {
     setEditId(null);
     setEntryFee(500); setPrizePool("₹100k"); setTotalSpots(5000);
     setShowForm(false);
+    setTimeout(() => setFeedback(null), 3000);
   };
 
   const handleEdit = (contest: Contest) => {
@@ -62,29 +65,34 @@ export default function AdminContests() {
     e.preventDefault();
     if (!matchId) return alert("Select a Match first");
 
-    try {
-      const payload = {
-        matchId,
-        entryFee: Number(entryFee),
-        prizePool,
-        totalSpots: Number(totalSpots),
-        spotsFilled: 0 // Reset on Add, but how about Edit?
-      };
+    setSaving(true);
+    setFeedback(null);
 
+    try {
       if (editId) {
-        // Only update certain fields so we don't overwrite spotsFilled and joinedUsers
         await updateDoc(doc(db, "contests", editId), {
            entryFee: Number(entryFee),
-           prizePool,
+           prizePool: isNaN(Number(prizePool)) ? prizePool : Number(prizePool),
            totalSpots: Number(totalSpots)
         });
+        setFeedback({ type: 'success', msg: 'Contest Updated Successfully!' });
       } else {
-        await addDoc(collection(db, "contests"), payload);
+        await addDoc(collection(db, "contests"), {
+          matchId,
+          entryFee: Number(entryFee),
+          prizePool: isNaN(Number(prizePool)) ? prizePool : Number(prizePool),
+          totalSpots: Number(totalSpots),
+          spotsFilled: 0,
+          createdAt: new Date().toISOString()
+        });
+        setFeedback({ type: 'success', msg: 'New Contest Published!' });
       }
       resetForm();
     } catch (err) {
       console.error(err);
-      alert("Failed to save contest.");
+      setFeedback({ type: 'error', msg: 'Failed to save contest.' });
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -138,11 +146,19 @@ export default function AdminContests() {
                         
                         <div className="md:col-span-2 flex justify-end gap-3 mt-4">
                             <button type="button" onClick={resetForm} className="px-6 py-3 rounded-xl border border-white/10 text-xs font-bold uppercase tracking-widest text-white/50 hover:text-white transition-colors">Cancel</button>
-                            <button type="submit" className="px-6 py-3 bg-accent text-[#0F1115] rounded-xl text-xs font-black uppercase tracking-widest shadow-[0_5px_15px_rgba(255,215,0,0.2)] active:scale-95 transition-all">
-                                {editId ? 'Update' : 'Publish'}
+                            <button type="submit" disabled={saving} className="px-6 py-3 bg-accent text-[#0F1115] rounded-xl text-xs font-black uppercase tracking-widest shadow-[0_5px_15px_rgba(255,215,0,0.2)] active:scale-95 transition-all disabled:opacity-50">
+                                {saving ? 'Processing...' : (editId ? 'Update' : 'Publish')}
                             </button>
                         </div>
                     </form>
+                    
+                    <AnimatePresence>
+                       {feedback && (
+                           <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className={`mt-4 p-4 rounded-xl text-[10px] uppercase font-black tracking-widest text-center ${feedback.type === 'success' ? 'bg-success/20 text-success border border-success/20' : 'bg-danger/20 text-danger border border-danger/20'}`}>
+                               {feedback.msg}
+                           </motion.div>
+                       )}
+                    </AnimatePresence>
                  </div>
              </motion.div>
          )}
