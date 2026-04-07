@@ -40,6 +40,7 @@ export interface Player {
   role: PlayerRole;
   credits: number; // For 100 limit budget
   basePoints: number; // Admin overrides
+  imageUrl?: string;
   createdAt: any;
 }
 

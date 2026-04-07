@@ -314,7 +314,11 @@ export default function CreateTeamClient() {
                       >
                         <div className="flex items-center gap-3">
                           <div className={`w-12 h-12 rounded-xl flex items-center justify-center font-black text-sm overflow-hidden relative ${isSelected ? 'bg-accent/20 border-accent text-accent border' : 'bg-[#0F1115] border border-white/10 text-white/80'}`}>
-                              {player.team.substring(0, 3).toUpperCase()}
+                              {player.imageUrl ? (
+                                <img src={player.imageUrl} alt={player.name} className="w-full h-full object-cover" />
+                              ) : (
+                                player.team.substring(0, 3).toUpperCase()
+                              )}
                           </div>
                           <div>
                             <h4 className="text-sm font-bold tracking-tight text-white/90">{player.name}</h4>
@@ -359,9 +363,13 @@ export default function CreateTeamClient() {
               {selectedPlayers.map((player) => (
                 <div key={player.id} className="bg-[#161B22] border border-white/5 rounded-[1.25rem] p-3 flex items-center justify-between">
                     <div className="flex items-center gap-3">
-                         <div className="w-12 h-12 rounded-full bg-[#0F1115] border border-white/10 flex items-center justify-center font-bold text-xs relative overflow-hidden">
-                              <span className="text-white/50 relative z-10">{player.team.charAt(0)}</span>
-                              <div className="absolute inset-x-0 bottom-0 top-1/2 bg-gradient-to-t from-white/5 to-transparent"></div>
+                         <div className="w-12 h-12 rounded-full bg-[#0F1115] border border-white/10 flex items-center justify-center font-bold text-xs relative overflow-hidden shrink-0">
+                              {player.imageUrl ? (
+                                <img src={player.imageUrl} alt={player.name} className="w-full h-full object-cover" />
+                              ) : (
+                                <span className="text-white/50 relative z-10">{player.team.charAt(0)}</span>
+                              )}
+                              <div className="absolute inset-x-0 bottom-0 top-1/2 bg-gradient-to-t from-black/20 to-transparent"></div>
                          </div>
                          <div>
                               <h4 className="text-sm font-bold text-white/90">{player.name}</h4>

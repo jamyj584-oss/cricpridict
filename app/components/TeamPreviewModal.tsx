@@ -37,9 +37,13 @@ export default function TeamPreviewModal({ isOpen, onClose, players, captainId, 
                   </div>
                 )}
                 
-                <div className={`w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center font-bold text-xs uppercase shadow-xl border-2 overflow-hidden bg-[#161B22] ${isCaptain || isViceCaptain ? 'border-accent text-accent' : 'border-white/20 text-white'}`}>
+                <div className={`w-10 h-10 md:w-12 md:h-12 rounded-full flex items-center justify-center font-bold text-xs uppercase shadow-xl border-2 overflow-hidden bg-[#161B22] relative ${isCaptain || isViceCaptain ? 'border-accent text-accent' : 'border-white/20 text-white'}`}>
                     <div className="absolute inset-0 bg-gradient-to-tr from-white/10 to-transparent"></div>
-                    {p.name.split(" ").slice(-1)[0].substring(0, 3)}
+                    {p.imageUrl ? (
+                      <img src={p.imageUrl} alt={p.name} className="w-full h-full object-cover" />
+                    ) : (
+                      p.name.split(" ").slice(-1)[0].substring(0, 3)
+                    )}
                 </div>
                 <div className="mt-1.5 px-2 py-0.5 bg-[#0F1115]/90 rounded text-[8px] font-bold text-center text-white truncate max-w-full backdrop-blur-sm border border-white/10">
                   {p.name.split(" ").pop()}
