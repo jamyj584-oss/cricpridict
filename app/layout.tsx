@@ -26,10 +26,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.className} min-h-screen bg-primary text-textMain max-w-md mx-auto relative md:border-x md:border-white/10 pb-20`}>
+      <body className={`${inter.className} min-h-screen bg-[#0F1115] text-textMain relative`}>
         <UserSync />
         {children}
-        <BottomNav />
       </body>
     </html>
   );
