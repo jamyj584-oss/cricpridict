@@ -10,7 +10,10 @@ export default function UserSync() {
 
   useEffect(() => {
     // 1. Handled case for our TEST_USER_999 from bypass login
-    const storedUser = localStorage.getItem('user-storage');
+    let storedUser = null;
+    if (typeof window !== "undefined") {
+        storedUser = localStorage.getItem('user-storage');
+    }
     let uid = user?.uid;
 
     if (!uid && storedUser) {

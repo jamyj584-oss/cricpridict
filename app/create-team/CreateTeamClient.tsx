@@ -1,6 +1,6 @@
 "use client";
 import { useEffect, useState, useMemo } from "react";
-import { ChevronLeft, Info, Plus, Check, Trophy, ShieldCheck, Gamepad2, ArrowRight } from "lucide-react";
+import { ChevronLeft, Info, Plus, Check, Trophy, ShieldCheck, Gamepad2, ArrowRight, Zap, Loader2 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { collection, onSnapshot, query, doc, getDoc, addDoc, serverTimestamp } from "firebase/firestore";
 import { db } from "@/lib/firebase";
@@ -42,6 +42,12 @@ export default function CreateTeamClient() {
   const [match, setMatch] = useState<Match | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
   const [showPreview, setShowPreview] = useState(false);
+  const [aiGenerating, setAiGenerating] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+     setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (!db || !matchId) return;
@@ -146,7 +152,59 @@ export default function CreateTeamClient() {
       }
   };
 
-  if (loading) return <div className="min-h-screen bg-[#0F1115] flex items-center justify-center text-accent uppercase tracking-widest font-bold animate-pulse">Drafting Arena...</div>;
+  const handleGenerateAI = () => {
+    if (aiGenerating || availablePlayers.length < 11 || match?.status === 'Live') return;
+    setAiGenerating(true);
+    setErrorMsg("");
+    
+    setTimeout(() => {
+      resetTeam();
+      
+      let selected: Player[] = [];
+      let totalCr = 0;
+      let roleCounts = { WK: 0, BAT: 0, AR: 0, BOWL: 0 };
+      
+      const shuffled = [...availablePlayers].sort(() => 0.5 - Math.random());
+      
+      // Pass 1: Meet minimums
+      const minReq = { WK: 1, BAT: 3, AR: 1, BOWL: 3 };
+      for (const role of Object.keys(minReq) as PlayerRole[]) {
+         const pForRole = shuffled.filter(p => p.role === role);
+         for (let i = 0; i < minReq[role]; i++) {
+             if (pForRole[i] && totalCr + pForRole[i].credits <= 100) {
+                 selected.push(pForRole[i]);
+                 totalCr += pForRole[i].credits;
+                 roleCounts[role]++;
+             }
+         }
+      }
+      
+      // Pass 2: Fill rest
+      for (const p of shuffled) {
+         if (selected.length === 11) break;
+         if (selected.find(s => s.id === p.id)) continue;
+         
+         if (roleCounts[p.role] < ROLE_LIMITS[p.role].max && totalCr + p.credits <= 100) {
+             selected.push(p);
+             totalCr += p.credits;
+             roleCounts[p.role]++;
+         }
+      }
+      
+      if (selected.length === 11) {
+          selected.forEach(addPlayer);
+          setCaptain(selected[0].id);
+          setViceCaptain(selected[1].id);
+          setStep(2);
+      } else {
+          setErrorMsg("Could not generate a valid AI team with current constraints. Please try manually.");
+      }
+      
+      setAiGenerating(false);
+    }, 1500);
+  };
+
+  if (!mounted || loading) return <div className="min-h-screen bg-[#0F1115] flex items-center justify-center text-accent uppercase tracking-widest font-bold animate-pulse">Drafting Arena...</div>;
 
   return (
     <main className="min-h-screen bg-[#0F1115] text-white flex flex-col pb-36">
@@ -196,6 +254,12 @@ export default function CreateTeamClient() {
                    ))}
                  </div>
                </div>
+               
+               {/* Auto-Fill Logic Button */}
+               <button onClick={handleGenerateAI} disabled={aiGenerating || match?.status === 'Live'} className="bg-blue-600/20 text-blue-400 border border-blue-500/30 px-3 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest flex items-center gap-1 active:scale-95 transition-all">
+                  {aiGenerating ? <Loader2 size={12} className="animate-spin" /> : <Zap size={12} />}
+                  {aiGenerating ? "..." : "Auto-Fill"}
+               </button>
             </div>
         </header>
 

@@ -27,7 +27,7 @@ export default function LiveMatchStatus() {
   if (!match) return <div className="min-h-screen bg-[#0F1115] flex items-center justify-center text-[#7698FB] uppercase tracking-widest font-bold">Connecting to Arena...</div>;
 
   return (
-    <main className="min-h-screen bg-[#0F1115] text-white flex flex-col pb-32">
+    <main className="min-h-screen bg-[#0F1115] text-white flex flex-col">
       {/* 08.png Header */}
       <header className="bg-[#0F1115]/80 backdrop-blur-md sticky top-0 z-50 p-4 border-b border-white/5 flex items-center justify-between">
         <button onClick={() => router.back()} className="text-white"><ChevronLeft size={24}/></button>
@@ -204,32 +204,6 @@ export default function LiveMatchStatus() {
         </motion.div>
       </AnimatePresence>
 
-      {/* Main persistence bottom nav (08.png has no icons shown, but matches global) */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-[#0F1115]/95 backdrop-blur-xl border-t border-white/5 px-6 py-3 flex justify-between items-end z-50">
-          <div className="flex flex-col items-center gap-1.5 cursor-pointer text-textMuted" onClick={() => router.push("/")}>
-              <LayoutGrid size={22} />
-              <span className="text-[9px] font-bold uppercase tracking-widest">Home</span>
-          </div>
-          <div className="flex flex-col items-center gap-1.5 cursor-pointer text-accent">
-              <Trophy size={22} />
-              <span className="text-[9px] font-bold uppercase tracking-widest">Matches</span>
-          </div>
-          
-          <div className="relative -top-3">
-              <div onClick={() => router.push("/create")} className="w-14 h-14 bg-white/10 rounded-full border-4 border-[#0F1115] flex items-center justify-center cursor-pointer opacity-30">
-                  <Plus size={28} className="text-white" />
-              </div>
-          </div>
-
-          <div className="flex flex-col items-center gap-1.5 cursor-pointer text-textMuted hover:text-white transition-colors" onClick={() => router.push("/winners")}>
-              <Award size={22} />
-              <span className="text-[9px] font-bold uppercase tracking-widest">Winners</span>
-          </div>
-          <div className="flex flex-col items-center gap-1.5 cursor-pointer text-textMuted hover:text-white transition-colors" onClick={() => router.push("/profile")}>
-              <User size={22} />
-              <span className="text-[9px] font-bold uppercase tracking-widest">Profile</span>
-          </div>
-      </nav>
     </main>
   );
 }

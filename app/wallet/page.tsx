@@ -1,6 +1,5 @@
 "use client";
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ChevronLeft, HelpCircle, Plus, CreditCard, Landmark, Coins, Trophy, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
@@ -23,6 +22,11 @@ export default function WalletPage() {
   const [loadingPack, setLoadingPack] = useState<number | null>(null);
   const [successMsg, setSuccessMsg] = useState("");
   const [errorMsg, setErrorMsg] = useState("");
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+     setMounted(true);
+  }, []);
 
   const handleBuyPack = async (packIndex: number, pack: typeof PACKS[0]) => {
     if (!user) return;
@@ -88,7 +92,7 @@ export default function WalletPage() {
                 </div>
                 <p className="text-[10px] text-textMuted font-bold uppercase tracking-widest mb-1">Total Coins</p>
                 <h3 className="text-5xl font-black tracking-tight text-white flex items-baseline gap-2 drop-shadow-[0_0_15px_rgba(255,215,0,0.5)]">
-                    {user?.walletCoins?.toLocaleString() || 0}
+                    {mounted ? (user?.walletCoins?.toLocaleString() || 0) : 0}
                 </h3>
                 <p className="text-[9px] text-white/40 mt-4 uppercase tracking-widest font-bold">1 INR = 5 Coins</p>
           </div>
@@ -134,7 +138,7 @@ export default function WalletPage() {
           <button className="bg-[#161B22] border border-white/10 text-white font-black py-4 rounded-2xl shadow-xl shadow-black uppercase tracking-widest text-xs flex flex-col items-center justify-center gap-2 active:scale-95 transition-all w-full">
               <Trophy size={18} className="text-[#7698FB]" /> 
               <span className="text-[9px]">Winnings</span>
-              <span className="text-white">₹{user?.walletBalance?.toLocaleString() || 0}</span>
+              <span className="text-white">₹{mounted ? (user?.walletBalance?.toLocaleString() || 0) : 0}</span>
           </button>
           <button className="bg-[#161B22] border border-white/10 text-white font-black py-4 rounded-2xl shadow-xl shadow-black uppercase tracking-widest text-xs flex flex-col items-center justify-center gap-2 active:scale-95 transition-all w-full">
               <Landmark size={18} className="text-white/50" /> 

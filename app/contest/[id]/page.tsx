@@ -23,6 +23,11 @@ export default function ContestLobby() {
   const [joiningId, setJoiningId] = useState<string | null>(null);
   const [errorMsg, setErrorMsg] = useState("");
   const [successMsg, setSuccessMsg] = useState("");
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => {
+     setMounted(true);
+  }, []);
+  
   useEffect(() => {
     if (!matchId || !db) return;
 
@@ -54,6 +59,22 @@ export default function ContestLobby() {
     return () => { unsubMatch(); unsubContests(); };
   }, [matchId, user]);
 
+  useEffect(() => {
+    // Strict redirect guard
+    if (!loading && match && user) {
+        if (match.status !== 'Live') {
+            if (userTeams.length === 0) {
+               router.replace(`/create-team?match=${matchId}`);
+            } else {
+               const team = userTeams[userTeams.length - 1];
+               if (!team.players || team.players.length !== 11 || !team.captainId || !team.viceCaptainId) {
+                  router.replace(`/create-team?match=${matchId}`);
+               }
+            }
+        }
+    }
+  }, [loading, match, userTeams, user, matchId, router]);
+
   const handleJoin = async (contest: Contest) => {
     setErrorMsg("");
     setSuccessMsg("");
@@ -62,6 +83,12 @@ export default function ContestLobby() {
         return setErrorMsg("Match started! Entries locked.");
     }
     
+    // UI Fast Fail on Balance
+    const userCoins = user.walletCoins || 0;
+    if (userCoins < (contest.entryFee || 0)) {
+        return setErrorMsg("Insufficient Balance");
+    }
+
     if (userTeams.length === 0) {
         setErrorMsg("Please create your team first");
         setTimeout(() => router.push(`/create-team?match=${matchId}`), 1500);
@@ -82,7 +109,7 @@ export default function ContestLobby() {
     setJoiningId(null);
 
     if (result.success) {
-      setSuccessMsg("Successfully joined the contest!");
+      setSuccessMsg(`₹${contest.entryFee || 0} deducted. Joined successfully`);
     } else {
       setErrorMsg(`Join Failed: ${result.error}`);
     }
@@ -112,7 +139,7 @@ export default function ContestLobby() {
           </div>
           <div className="flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-full border border-white/5 cursor-pointer hover:bg-white/10" onClick={() => router.push('/wallet')}>
             <span className="text-sm">🪙</span>
-            <span className="text-xs font-bold">{user?.walletCoins?.toLocaleString() || 0}</span>
+            <span className="text-xs font-bold">{mounted ? (user?.walletCoins?.toLocaleString() || 0) : 0}</span>
           </div>
         </div>
 
@@ -171,15 +198,16 @@ export default function ContestLobby() {
                                     <button 
                                         onClick={() => handleJoin(contest)}
                                         disabled={joiningId === contest.id || match.status === 'Live'}
-                                        className={`w-full px-6 py-2.5 rounded-xl font-black text-xs shadow-xl transition-all ${
+                                        className={`w-full px-6 py-2.5 rounded-xl font-black text-xs shadow-xl transition-all flex items-center justify-center gap-2 ${
                                             joiningId === contest.id 
-                                            ? 'bg-white/10 text-white/40' 
+                                            ? 'bg-white/10 text-white/40 cursor-wait' 
                                             : match.status === 'Live'
                                             ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
                                             : 'bg-accent text-[#0F1115] shadow-[0_5px_15px_rgba(255,215,0,0.2)] active:scale-95'
                                         }`}
                                     >
-                                        {joiningId === contest.id ? "..." : match.status === 'Live' ? "Details" : `Join`}
+                                        {joiningId === contest.id && <Loader2 size={16} className="animate-spin" />}
+                                        {joiningId === contest.id ? "Processing..." : match.status === 'Live' ? "Details" : `Join`}
                                     </button>
                                     <p className="text-[8px] text-textMuted font-bold uppercase tracking-widest mt-1 text-center w-full">
                                         {contest.entryFee} coins used

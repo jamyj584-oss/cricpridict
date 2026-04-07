@@ -9,7 +9,15 @@ export const metadata: Metadata = {
   description: "Premium Fantasy Cricket Prediction App",
 };
 
+export const viewport = { 
+  width: "device-width", 
+  initialScale: 1, 
+  maximumScale: 1, 
+  userScalable: false 
+};
+
 import UserSync from "@/components/UserSync";
+import BottomNav from "@/components/BottomNav";
 
 export default function RootLayout({
   children,
@@ -18,9 +26,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body className={`${inter.className} min-h-screen bg-primary text-textMain max-w-md mx-auto relative overflow-x-hidden md:border-x md:border-white/10`}>
+      <body className={`${inter.className} min-h-screen bg-primary text-textMain max-w-md mx-auto relative md:border-x md:border-white/10 pb-20`}>
         <UserSync />
         {children}
+        <BottomNav />
       </body>
     </html>
   );

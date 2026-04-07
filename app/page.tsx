@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { Bell, Trophy, User, Loader2, Wallet, LayoutGrid, Award, Plus } from "lucide-react";
 import { motion } from "framer-motion";
-import { collection, onSnapshot, query, orderBy } from "firebase/firestore";
+import { collection, onSnapshot, query, orderBy, getDocs, where } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Match, MatchStatus } from "@/types";
 import { useRouter } from "next/navigation";
@@ -18,6 +18,11 @@ export default function Home() {
   const [aiLoading, setAiLoading] = useState(false);
   const [aiResult, setAiResult] = useState("");
   const [aiError, setAiError] = useState("");
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+     setMounted(true);
+  }, []);
 
   useEffect(() => {
     if (!db) return;
@@ -59,13 +64,36 @@ export default function Home() {
     return `${diffHrs}h ${remainingMins}m`;
   };
 
+  const handleMatchAction = async (matchId: string, status: string) => {
+    if (status !== 'Upcoming') {
+       if (status === 'Live') router.push(`/live/${matchId}`);
+       else router.push(`/contest/${matchId}`);
+       return;
+    }
+
+    if (!user) {
+        router.push("/login");
+        return;
+    }
+
+    // Use a loading state if we want, but it should be fast
+    const qTeams = query(collection(db, "teams"), where("userId", "==", user.uid), where("matchId", "==", matchId));
+    const snap = await getDocs(qTeams);
+    
+    if (!snap.empty) {
+        router.push(`/contest/${matchId}`);
+    } else {
+        router.push(`/create-team?match=${matchId}`);
+    }
+  };
+
   return (
-    <main className="min-h-screen bg-[#0F1115] text-white pb-32">
+    <main className="min-h-screen bg-[#0F1115] text-white">
       {/* 03.png Header Implementation */}
       <header className="sticky top-0 z-50 bg-[#0F1115]/80 backdrop-blur-md px-4 py-4 flex items-center justify-between border-b border-white/5">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full border border-white/20 bg-[#161B22] flex items-center justify-center font-bold text-sm text-textMain">
-            {user?.phoneNumber?.substring(user.phoneNumber.length - 2) || "JD"}
+            {mounted ? (user?.phoneNumber?.substring(user.phoneNumber.length - 2) || "JD") : "JD"}
           </div>
           <div>
             <h1 className="font-bold text-base leading-tight">CricPredict</h1>
@@ -75,7 +103,7 @@ export default function Home() {
         <div className="flex items-center gap-3">
           <button onClick={() => router.push("/wallet")} className="flex items-center gap-2 bg-[#161B22] px-3 py-1.5 rounded-full border border-white/10 text-xs font-bold hover:bg-[#1A2234] transition-colors">
             <span className="text-sm">🪙</span>
-            <span>{(user?.walletCoins || 0).toLocaleString()}</span>
+            <span>{mounted ? (user?.walletCoins || 0).toLocaleString() : 0}</span>
           </button>
           <button className="p-1 relative">
             <Bell size={20} className="text-white/80" />
@@ -197,7 +225,7 @@ export default function Home() {
                             <p className="font-bold text-accent">₹50 Lakhs</p>
                         </div>
                         <button 
-                            onClick={() => router.push(`/contest/${match.id}`)}
+                            onClick={() => handleMatchAction(match.id!, activeTab)}
                             className="bg-[#7698FB] text-[#0F1115] px-6 py-2.5 rounded-xl text-xs font-bold shadow-lg shadow-[#7698FB]/20 hover:brightness-110 active:scale-[0.98] transition-all"
                         >
                             {activeTab === 'Upcoming' ? "Create Team" : activeTab === 'Live' ? "Track Live" : "Final Standings"}
@@ -264,32 +292,6 @@ export default function Home() {
           <span className="underline mt-1 block">Terms & Conditions Apply</span>
       </div>
 
-      {/* Fixed Bottom Navigation (matches 03.png) */}
-      <nav className="fixed bottom-0 left-0 right-0 bg-[#0F1115]/95 backdrop-blur-xl border-t border-white/5 px-6 py-3 flex justify-between items-end z-50">
-          <div className="flex flex-col items-center gap-1.5 cursor-pointer text-white" onClick={() => router.push("/")}>
-              <LayoutGrid size={22} className="text-accent" />
-              <span className="text-[9px] font-bold uppercase tracking-widest text-white">Home</span>
-          </div>
-          <div className="flex flex-col items-center gap-1.5 cursor-pointer text-textMuted hover:text-white transition-colors" onClick={() => router.push("/match")}>
-              <Trophy size={22} />
-              <span className="text-[9px] font-bold uppercase tracking-widest">Matches</span>
-          </div>
-          
-          <div className="relative -top-3">
-              <div onClick={() => router.push("/match")} className="w-14 h-14 bg-[#7698FB] rounded-full border-4 border-[#0F1115] flex items-center justify-center shadow-2xl shadow-accent/40 cursor-pointer active:scale-90 transition-transform">
-                  <Plus size={28} className="text-[#0F1115]" />
-              </div>
-          </div>
-
-          <div className="flex flex-col items-center gap-1.5 cursor-pointer text-textMuted hover:text-white transition-colors" onClick={() => router.push("/winners")}>
-              <Award size={22} />
-              <span className="text-[9px] font-bold uppercase tracking-widest">Winners</span>
-          </div>
-          <div className="flex flex-col items-center gap-1.5 cursor-pointer text-textMuted hover:text-white transition-colors" onClick={() => router.push("/profile")}>
-              <User size={22} />
-              <span className="text-[9px] font-bold uppercase tracking-widest">Profile</span>
-          </div>
-      </nav>
     </main>
   );
 }
