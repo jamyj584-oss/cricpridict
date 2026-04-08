@@ -282,7 +282,7 @@ function PredictSelectionClient() {
           </div>
       </div>
 
-      <div className="fixed bottom-0 left-0 right-0 max-w-md mx-auto p-4 z-50 bg-gradient-to-t from-[#0F1115] via-[#0F1115]/95 to-transparent pointer-events-none">
+      <div className="fixed bottom-[80px] left-0 right-0 max-w-md mx-auto p-4 z-[60] bg-gradient-to-t from-[#0F1115] via-[#0F1115]/95 to-transparent pointer-events-none">
           <div className="bg-[#161B22]/95 backdrop-blur-xl border border-white/10 rounded-2xl p-4 shadow-2xl flex flex-col gap-4 pointer-events-auto">
              <div className="flex justify-between items-center px-2">
                 <div className="flex flex-col">
