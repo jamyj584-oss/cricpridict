@@ -231,9 +231,12 @@ export default function AdminMatches() {
                      </button>
 
                      {match.status === 'Live' && (
-                         <div className="flex gap-2">
-                            <button onClick={() => handleSetWinner(match.id!, match.teamA)} className="flex-1 bg-success/10 hover:bg-success/20 text-[10px] uppercase font-bold py-2 rounded-lg text-success transition-colors">{match.teamA} Win</button>
-                            <button onClick={() => handleSetWinner(match.id!, match.teamB)} className="flex-1 bg-success/10 hover:bg-success/20 text-[10px] uppercase font-bold py-2 rounded-lg text-success transition-colors">{match.teamB} Win</button>
+                         <div className="flex flex-col gap-2">
+                             <div className="flex gap-2">
+                                <button onClick={() => handleSetWinner(match.id!, match.teamA)} className="flex-1 bg-success/10 hover:bg-success/20 text-[10px] uppercase font-bold py-2 rounded-lg text-success transition-colors">{match.teamA} Win</button>
+                                <button onClick={() => handleSetWinner(match.id!, match.teamB)} className="flex-1 bg-success/10 hover:bg-success/20 text-[10px] uppercase font-bold py-2 rounded-lg text-success transition-colors">{match.teamB} Win</button>
+                             </div>
+                             <button onClick={() => handleUpdateStatus(match.id!, 'Upcoming')} className="w-full bg-danger/10 text-danger border border-danger/20 hover:bg-danger/20 text-[10px] uppercase font-black py-2 rounded-lg transition-colors">Stop Live (Revert)</button>
                          </div>
                      )}
                      {match.status === 'Completed' && (
