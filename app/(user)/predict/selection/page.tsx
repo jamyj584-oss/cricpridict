@@ -114,21 +114,14 @@ function PredictSelectionClient() {
 
   const totalForTab = Object.values(predictions[activeTab] || {}).reduce((a, b) => a + b, 0);
 
-  const totalUniquePlayers = new Set<string>();
+  let totalPicks = 0;
   Object.values(predictions).forEach(tabObj => {
-      Object.entries(tabObj).forEach(([pId, score]) => {
-          if (score > 0) totalUniquePlayers.add(pId);
+      Object.values(tabObj).forEach(score => {
+          totalPicks += score;
       });
   });
-  const totalPicks = totalUniquePlayers.size;
 
-  let lockCost = 0;
-  if (totalPicks === 1) lockCost = 75;
-  else if (totalPicks === 2) lockCost = 140;
-  else if (totalPicks === 3) lockCost = 200;
-  else if (totalPicks === 4) lockCost = 250;
-  else if (totalPicks === 5) lockCost = 290;
-  else if (totalPicks >= 6) lockCost = 320;
+  const lockCost = totalPicks * 75;
 
   const handleLock = async () => {
       if (totalPicks === 0) return alert("Make at least 1 prediction.");
