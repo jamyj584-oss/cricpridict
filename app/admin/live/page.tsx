@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from "react";
 import { db } from "@/lib/firebase";
-import { collection, doc, onSnapshot, query, where, setDoc } from "firebase/firestore";
+import { collection, doc, onSnapshot, query, where, setDoc, updateDoc } from "firebase/firestore";
 import { Match } from "@/types";
 import { Activity, Zap, Radio, Globe } from "lucide-react";
 import { motion } from "framer-motion";
@@ -35,6 +35,12 @@ export default function AdminLiveScores() {
                     ...prev,
                     [match.id!]: docSnap.data()
                 }));
+            } else if (match.scoreData) {
+                // fallback to DB scoreData if live_update doc doesn't exist yet
+                setUpdateData(prev => ({
+                    ...prev,
+                    [match.id!]: match.scoreData
+                }));
             }
         });
         return () => unsub();
@@ -55,14 +61,25 @@ export default function AdminLiveScores() {
       setSaving(matchId);
       try {
           const data = updateData[matchId] || {};
-          await setDoc(doc(db, "live_updates", matchId), {
-              matchId,
-              score: data.score || "",
-              overs: data.overs || "",
+          const scoreData = {
+              teamAScore: data.teamAScore || "",
+              teamAOvers: data.teamAOvers || "",
+              teamBScore: data.teamBScore || "",
+              teamBOvers: data.teamBOvers || "",
               runRate: data.runRate || "",
               commentary: data.commentary || "",
+          };
+
+          await setDoc(doc(db, "live_updates", matchId), {
+              matchId,
+              ...scoreData,
               updatedAt: new Date().toISOString()
           }, { merge: true });
+
+          // Synchronize scoreData with the primary match document
+          await updateDoc(doc(db, "matches", matchId), {
+              scoreData
+          });
       } catch (err) {
           console.error(err);
           alert("Failed to push update.");
@@ -100,29 +117,63 @@ export default function AdminLiveScores() {
                       <h2 className="text-xl font-black uppercase tracking-wide text-white mb-1">{match.teamA} vs {match.teamB}</h2>
                       <p className="text-[10px] text-textMuted uppercase font-bold tracking-widest mb-6">Match ID: {match.id}</p>
 
-                      <div className="grid grid-cols-2 gap-4 mb-4">
-                          <div>
-                              <label className="text-[9px] text-accent uppercase tracking-widest font-black block mb-1">Current Score</label>
-                              <input 
-                                  type="text" 
-                                  value={updateData[match.id!]?.score || ""}
-                                  onChange={(e) => handleUpdate(match.id!, 'score', e.target.value)}
-                                  className="w-full bg-[#0F1115] border border-white/10 rounded-xl px-4 py-3 text-lg font-black tracking-widest focus:border-accent/50 outline-none transition-colors placeholder:text-white/10" 
-                                  placeholder="e.g. 180/5"
-                              />
+                      <div className="grid grid-cols-2 gap-4 mb-6">
+                          {/* TEAM A SECTION */}
+                          <div className="col-span-2 bg-[#0F1115] border border-white/5 rounded-2xl p-4">
+                              <h3 className="text-[10px] text-accent uppercase tracking-widest font-black block mb-3 border-b border-white/5 pb-2">Team 1: {match.teamA}</h3>
+                              <div className="grid grid-cols-2 gap-4">
+                                  <div>
+                                      <label className="text-[9px] text-textMuted uppercase tracking-widest font-bold block mb-1">Score</label>
+                                      <input 
+                                          type="text" 
+                                          value={updateData[match.id!]?.teamAScore || ""}
+                                          onChange={(e) => handleUpdate(match.id!, 'teamAScore', e.target.value)}
+                                          className="w-full bg-[#161B22] border border-white/10 rounded-xl px-4 py-3 text-lg font-black tracking-widest focus:border-accent/50 outline-none transition-colors placeholder:text-white/10" 
+                                          placeholder="e.g. 180/5"
+                                      />
+                                  </div>
+                                  <div>
+                                      <label className="text-[9px] text-textMuted uppercase tracking-widest font-bold block mb-1">Overs</label>
+                                      <input 
+                                          type="text" 
+                                          value={updateData[match.id!]?.teamAOvers || ""}
+                                          onChange={(e) => handleUpdate(match.id!, 'teamAOvers', e.target.value)}
+                                          className="w-full bg-[#161B22] border border-white/10 rounded-xl px-4 py-3 text-sm font-bold tracking-widest focus:border-accent/50 outline-none transition-colors placeholder:text-white/10" 
+                                          placeholder="e.g. 18.3"
+                                      />
+                                  </div>
+                              </div>
                           </div>
-                          <div>
-                              <label className="text-[9px] text-textMuted uppercase tracking-widest font-bold block mb-1">Overs</label>
-                              <input 
-                                  type="text" 
-                                  value={updateData[match.id!]?.overs || ""}
-                                  onChange={(e) => handleUpdate(match.id!, 'overs', e.target.value)}
-                                  className="w-full bg-[#0F1115] border border-white/10 rounded-xl px-4 py-3 text-sm font-bold tracking-widest focus:border-accent/50 outline-none transition-colors placeholder:text-white/10" 
-                                  placeholder="e.g. 18.3"
-                              />
+
+                          {/* TEAM B SECTION */}
+                          <div className="col-span-2 bg-[#0F1115] border border-white/5 rounded-2xl p-4">
+                              <h3 className="text-[10px] text-accent uppercase tracking-widest font-black block mb-3 border-b border-white/5 pb-2">Team 2: {match.teamB}</h3>
+                              <div className="grid grid-cols-2 gap-4">
+                                  <div>
+                                      <label className="text-[9px] text-textMuted uppercase tracking-widest font-bold block mb-1">Score</label>
+                                      <input 
+                                          type="text" 
+                                          value={updateData[match.id!]?.teamBScore || ""}
+                                          onChange={(e) => handleUpdate(match.id!, 'teamBScore', e.target.value)}
+                                          className="w-full bg-[#161B22] border border-white/10 rounded-xl px-4 py-3 text-lg font-black tracking-widest focus:border-accent/50 outline-none transition-colors placeholder:text-white/10" 
+                                          placeholder="e.g. 180/5"
+                                      />
+                                  </div>
+                                  <div>
+                                      <label className="text-[9px] text-textMuted uppercase tracking-widest font-bold block mb-1">Overs</label>
+                                      <input 
+                                          type="text" 
+                                          value={updateData[match.id!]?.teamBOvers || ""}
+                                          onChange={(e) => handleUpdate(match.id!, 'teamBOvers', e.target.value)}
+                                          className="w-full bg-[#161B22] border border-white/10 rounded-xl px-4 py-3 text-sm font-bold tracking-widest focus:border-accent/50 outline-none transition-colors placeholder:text-white/10" 
+                                          placeholder="e.g. 18.3"
+                                      />
+                                  </div>
+                              </div>
                           </div>
+
                           <div className="col-span-2">
-                              <label className="text-[9px] text-textMuted uppercase tracking-widest font-bold block mb-1">Run Rate (RR)</label>
+                              <label className="text-[9px] text-textMuted uppercase tracking-widest font-bold block mb-1">Current Run Rate (RR)</label>
                               <input 
                                   type="text" 
                                   value={updateData[match.id!]?.runRate || ""}

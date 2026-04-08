@@ -44,6 +44,7 @@ export default function CreateTeamClient() {
   const [showPreview, setShowPreview] = useState(false);
   const [aiGenerating, setAiGenerating] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [allPlayers, setAllPlayers] = useState<Player[]>([]);
 
   useEffect(() => {
      setMounted(true);
@@ -54,7 +55,9 @@ export default function CreateTeamClient() {
 
     const fetchMatch = async () => {
       const mDoc = await getDoc(doc(db, "matches", matchId));
-      if (mDoc.exists()) setMatch({ id: mDoc.id, ...mDoc.data() } as Match);
+      if (mDoc.exists()) {
+          setMatch({ id: mDoc.id, ...mDoc.data() } as Match);
+      }
     };
     fetchMatch();
 
@@ -62,12 +65,31 @@ export default function CreateTeamClient() {
     const unsubscribe = onSnapshot(q, (snapshot) => {
       const data: Player[] = [];
       snapshot.forEach(doc => data.push({ id: doc.id, ...doc.data() } as Player));
-      // For production, filter by match team here
-      setAvailablePlayers(data);
-      setLoading(false);
+      setAllPlayers(data);
     });
     return () => unsubscribe();
   }, [matchId]);
+
+  useEffect(() => {
+    if (allPlayers.length > 0 && match) {
+        const squadIds = new Set([
+            ...(match.squadA || []),
+            ...(match.squadB || [])
+        ]);
+
+        let filteredOpts = allPlayers;
+        if (squadIds.size > 0) {
+            // Filter strictly by the admin's squad selection
+            filteredOpts = allPlayers.filter(p => squadIds.has(p.id!));
+        } else {
+            // Fallback: if no squad selected, just filter by team
+            filteredOpts = allPlayers.filter(p => p.team === match.teamA || p.team === match.teamB);
+        }
+        
+        setAvailablePlayers(filteredOpts);
+        setLoading(false);
+    }
+  }, [allPlayers, match]);
 
   const filteredPlayers = useMemo(() => {
     return availablePlayers.filter(p => p.role === activeRole);
@@ -87,7 +109,7 @@ export default function CreateTeamClient() {
 
   // Handle Player Selection with strict Role and Credit constraints
   const handlePlayerToggle = (player: Player) => {
-      if (match?.status === 'Live') return;
+      if (match?.status !== 'Upcoming') return;
       setErrorMsg("");
 
       const isSelected = selectedPlayers.some(p => p.id === player.id);
@@ -153,7 +175,7 @@ export default function CreateTeamClient() {
   };
 
   const handleGenerateAI = () => {
-    if (aiGenerating || availablePlayers.length < 11 || match?.status === 'Live') return;
+    if (aiGenerating || availablePlayers.length < 11 || match?.status !== 'Upcoming') return;
     setAiGenerating(true);
     setErrorMsg("");
     
@@ -256,7 +278,7 @@ export default function CreateTeamClient() {
                </div>
                
                {/* Auto-Fill Logic Button */}
-               <button onClick={handleGenerateAI} disabled={aiGenerating || match?.status === 'Live'} className="bg-blue-600/20 text-blue-400 border border-blue-500/30 px-3 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest flex items-center gap-1 active:scale-95 transition-all">
+               <button onClick={handleGenerateAI} disabled={aiGenerating || match?.status !== 'Upcoming'} className="bg-blue-600/20 text-blue-400 border border-blue-500/30 px-3 py-2 rounded-lg text-[9px] font-black uppercase tracking-widest flex items-center gap-1 active:scale-95 transition-all">
                   {aiGenerating ? <Loader2 size={12} className="animate-spin" /> : <Zap size={12} />}
                   {aiGenerating ? "..." : "Auto-Fill"}
                </button>
@@ -295,7 +317,7 @@ export default function CreateTeamClient() {
                 <div className="flex justify-between items-center mb-2 px-2">
                   <p className="text-[9px] text-textMuted font-bold uppercase tracking-widest border-b border-white/5 pb-1 w-full flex justify-between">
                       {activeRole}'s Available
-                      {match?.status === 'Live' && <span className="bg-danger/10 text-danger text-[8px] font-bold uppercase px-2 py-0.5 rounded-full animate-pulse">Match Live - Read Only</span>}
+                      {match?.status !== 'Upcoming' && <span className="bg-danger/10 text-danger text-[8px] font-bold uppercase px-2 py-0.5 rounded-full animate-pulse">Match Locked - Read Only</span>}
                   </p>
                 </div>
                 
@@ -410,8 +432,8 @@ export default function CreateTeamClient() {
                           }
                           setStep(2);
                         }}
-                        disabled={!canProceedToCaptain || match?.status === 'Live'}
-                        className={`w-full py-4 rounded-xl font-black uppercase tracking-widest text-xs flex justify-between px-6 items-center transition-all ${canProceedToCaptain && match?.status !== 'Live' ? 'bg-accent text-[#0F1115] shadow-[0_5px_20px_rgba(255,215,0,0.3)] active:scale-95' : 'bg-white/5 text-white/30'}`}
+                        disabled={!canProceedToCaptain || match?.status !== 'Upcoming'}
+                        className={`w-full py-4 rounded-xl font-black uppercase tracking-widest text-xs flex justify-between px-6 items-center transition-all ${canProceedToCaptain && match?.status === 'Upcoming' ? 'bg-accent text-[#0F1115] shadow-[0_5px_20px_rgba(255,215,0,0.3)] active:scale-95' : 'bg-white/5 text-white/30'}`}
                      >
                         NEXT
                         <ArrowRight size={16} />

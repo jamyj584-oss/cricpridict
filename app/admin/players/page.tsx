@@ -146,7 +146,10 @@ export default function AdminPlayers() {
     } catch (err) { alert("Error saving player"); }
   };
 
-  const currentTeamPlayers = players.filter(p => p.team === selectedTeamCode);
+  const roleOrder: Record<string, number> = { "AR": 1, "WK": 2, "BAT": 3, "BOWL": 4 };
+  const currentTeamPlayers = players
+    .filter(p => p.team === selectedTeamCode)
+    .sort((a, b) => (roleOrder[a.role] || 99) - (roleOrder[b.role] || 99));
   const selectedTeamData = teams.find(t => t.code === selectedTeamCode);
 
   return (

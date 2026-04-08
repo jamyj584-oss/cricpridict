@@ -161,68 +161,10 @@ export default function AdminMatches() {
     }
   };
 
-  return (
-    <div className="space-y-6 relative">
-      <header className="flex justify-between items-end mb-8">
-        <div>
-           <h1 className="text-2xl font-black text-white uppercase tracking-widest">Matches</h1>
-           <p className="text-xs text-textMuted font-bold uppercase tracking-widest mt-1">Manage Database</p>
-        </div>
-        {!showForm && (
-           <button onClick={() => setShowForm(true)} className="bg-accent text-[#0F1115] font-black uppercase text-[10px] tracking-widest px-4 py-2 rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-all shadow-[0_5px_15px_rgba(255,215,0,0.2)]">
-               <Plus size={16} /> Add Match
-           </button>
-        )}
-      </header>
+  const activeMatches = matches.filter(m => m.status !== 'Completed').sort((a, b) => a.startTime - b.startTime);
+  const completedMatches = matches.filter(m => m.status === 'Completed').sort((a, b) => b.startTime - a.startTime);
 
-      <AnimatePresence>
-         {showForm && (
-             <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
-                 <div className="bg-[#161B22] p-6 rounded-2xl border border-white/5 mb-8 shadow-2xl relative">
-                    <h2 className="text-accent font-black uppercase tracking-widest text-sm mb-6">{editId ? 'Edit Match' : 'New Match'}</h2>
-                    <form onSubmit={handleSaveMatch} className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div>
-                            <label className="text-[10px] text-textMuted uppercase tracking-widest font-bold mb-1 block">Team A</label>
-                            <input type="text" value={teamA} onChange={e=>setTeamA(e.target.value)} required className="w-full bg-[#0F1115] border border-white/5 rounded-xl px-4 py-3 text-sm focus:border-accent/50 outline-none transition-colors" placeholder="e.g. IND" />
-                        </div>
-                        <div>
-                            <label className="text-[10px] text-textMuted uppercase tracking-widest font-bold mb-1 block">Team B</label>
-                            <input type="text" value={teamB} onChange={e=>setTeamB(e.target.value)} required className="w-full bg-[#0F1115] border border-white/5 rounded-xl px-4 py-3 text-sm focus:border-accent/50 outline-none transition-colors" placeholder="e.g. AUS" />
-                        </div>
-                        <div>
-                            <label className="text-[10px] text-textMuted uppercase tracking-widest font-bold mb-1 block">Match Type</label>
-                            <select value={matchType} onChange={e=>setMatchType(e.target.value)} className="w-full bg-[#0F1115] border border-white/5 rounded-xl px-4 py-3 text-sm focus:border-accent/50 outline-none transition-colors">
-                                <option value="T20">T20</option>
-                                <option value="ODI">ODI</option>
-                                <option value="Test">Test</option>
-                                <option value="League">League</option>
-                            </select>
-                        </div>
-                        <div>
-                            <label className="text-[10px] text-textMuted uppercase tracking-widest font-bold mb-1 block">Date & Time</label>
-                            <input type="datetime-local" value={timeStr} onChange={e=>setTimeStr(e.target.value)} required className="w-full bg-[#0F1115] border border-white/5 rounded-xl px-4 py-3 text-sm focus:border-accent/50 outline-none transition-colors [color-scheme:dark]" />
-                        </div>
-                        <div className="md:col-span-2">
-                            <label className="text-[10px] text-textMuted uppercase tracking-widest font-bold mb-1 block">Venue (Optional)</label>
-                            <input type="text" value={venue} onChange={e=>setVenue(e.target.value)} className="w-full bg-[#0F1115] border border-white/5 rounded-xl px-4 py-3 text-sm focus:border-accent/50 outline-none transition-colors" placeholder="e.g. Wankhede Stadium" />
-                        </div>
-                        <div className="md:col-span-2 flex justify-end gap-3 mt-4">
-                            <button type="button" onClick={resetForm} className="px-6 py-3 rounded-xl border border-white/10 text-xs font-bold uppercase tracking-widest text-white/50 hover:text-white transition-colors">Cancel</button>
-                            <button type="submit" className="px-6 py-3 bg-accent text-[#0F1115] rounded-xl text-xs font-black uppercase tracking-widest shadow-[0_5px_15px_rgba(255,215,0,0.2)] active:scale-95 transition-all">
-                                {editId ? 'Update' : 'Publish'}
-                            </button>
-                        </div>
-                    </form>
-                 </div>
-             </motion.div>
-         )}
-      </AnimatePresence>
-
-      {/* Matches List */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {loading ? (
-             <div className="col-span-full py-12 flex justify-center"><div className="w-8 h-8 border-4 border-accent border-t-transparent rounded-full animate-spin"></div></div>
-          ) : matches.map(match => (
+  const renderMatchCard = (match: Match) => (
              <div key={match.id} className="bg-[#161B22] border border-white/5 rounded-2xl p-5 flex flex-col relative group hover:border-white/10 transition-colors">
                  
                  <div className="flex justify-between items-start mb-6">
@@ -301,7 +243,89 @@ export default function AdminMatches() {
                      )}
                  </div>
              </div>
-          ))}
+  );
+
+  return (
+    <div className="space-y-6 relative">
+      <header className="flex justify-between items-end mb-8">
+        <div>
+           <h1 className="text-2xl font-black text-white uppercase tracking-widest">Matches</h1>
+           <p className="text-xs text-textMuted font-bold uppercase tracking-widest mt-1">Manage Database</p>
+        </div>
+        {!showForm && (
+           <button onClick={() => setShowForm(true)} className="bg-accent text-[#0F1115] font-black uppercase text-[10px] tracking-widest px-4 py-2 rounded-xl flex items-center justify-center gap-2 active:scale-95 transition-all shadow-[0_5px_15px_rgba(255,215,0,0.2)]">
+               <Plus size={16} /> Add Match
+           </button>
+        )}
+      </header>
+
+      <AnimatePresence>
+         {showForm && (
+             <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }} className="overflow-hidden">
+                 <div className="bg-[#161B22] p-6 rounded-2xl border border-white/5 mb-8 shadow-2xl relative">
+                    <h2 className="text-accent font-black uppercase tracking-widest text-sm mb-6">{editId ? 'Edit Match' : 'New Match'}</h2>
+                    <form onSubmit={handleSaveMatch} className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <label className="text-[10px] text-textMuted uppercase tracking-widest font-bold mb-1 block">Team A</label>
+                            <input type="text" value={teamA} onChange={e=>setTeamA(e.target.value)} required className="w-full bg-[#0F1115] border border-white/5 rounded-xl px-4 py-3 text-sm focus:border-accent/50 outline-none transition-colors" placeholder="e.g. IND" />
+                        </div>
+                        <div>
+                            <label className="text-[10px] text-textMuted uppercase tracking-widest font-bold mb-1 block">Team B</label>
+                            <input type="text" value={teamB} onChange={e=>setTeamB(e.target.value)} required className="w-full bg-[#0F1115] border border-white/5 rounded-xl px-4 py-3 text-sm focus:border-accent/50 outline-none transition-colors" placeholder="e.g. AUS" />
+                        </div>
+                        <div>
+                            <label className="text-[10px] text-textMuted uppercase tracking-widest font-bold mb-1 block">Match Type</label>
+                            <select value={matchType} onChange={e=>setMatchType(e.target.value)} className="w-full bg-[#0F1115] border border-white/5 rounded-xl px-4 py-3 text-sm focus:border-accent/50 outline-none transition-colors">
+                                <option value="T20">T20</option>
+                                <option value="ODI">ODI</option>
+                                <option value="Test">Test</option>
+                                <option value="IPL">IPL</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label className="text-[10px] text-textMuted uppercase tracking-widest font-bold mb-1 block">Date & Time</label>
+                            <input type="datetime-local" value={timeStr} onChange={e=>setTimeStr(e.target.value)} required className="w-full bg-[#0F1115] border border-white/5 rounded-xl px-4 py-3 text-sm focus:border-accent/50 outline-none transition-colors [color-scheme:dark]" />
+                        </div>
+                        <div className="md:col-span-2">
+                            <label className="text-[10px] text-textMuted uppercase tracking-widest font-bold mb-1 block">Venue (Optional)</label>
+                            <input type="text" value={venue} onChange={e=>setVenue(e.target.value)} className="w-full bg-[#0F1115] border border-white/5 rounded-xl px-4 py-3 text-sm focus:border-accent/50 outline-none transition-colors" placeholder="e.g. Wankhede Stadium" />
+                        </div>
+                        <div className="md:col-span-2 flex justify-end gap-3 mt-4">
+                            <button type="button" onClick={resetForm} className="px-6 py-3 rounded-xl border border-white/10 text-xs font-bold uppercase tracking-widest text-white/50 hover:text-white transition-colors">Cancel</button>
+                            <button type="submit" className="px-6 py-3 bg-accent text-[#0F1115] rounded-xl text-xs font-black uppercase tracking-widest shadow-[0_5px_15px_rgba(255,215,0,0.2)] active:scale-95 transition-all">
+                                {editId ? 'Update' : 'Publish'}
+                            </button>
+                        </div>
+                    </form>
+                 </div>
+             </motion.div>
+         )}
+      </AnimatePresence>
+
+      {/* Active Matches List */}
+      <div className="mb-10">
+          <h2 className="text-accent font-black uppercase tracking-widest text-sm mb-6">Upcoming & Live Matches</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {loading ? (
+                 <div className="col-span-full py-12 flex justify-center"><div className="w-8 h-8 border-4 border-accent border-t-transparent rounded-full animate-spin"></div></div>
+              ) : activeMatches.map(renderMatchCard)}
+              {activeMatches.length === 0 && !loading && (
+                 <div className="col-span-full py-12 text-center text-white/20 font-black uppercase text-xs tracking-widest border border-dashed border-white/5 rounded-2xl">No Active Matches</div>
+              )}
+          </div>
+      </div>
+
+      {/* Completed Matches List */}
+      <div>
+          <h2 className="text-white/40 font-black uppercase tracking-widest text-sm mb-6">Completed Matches</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 opacity-80">
+              {loading ? (
+                 <div className="col-span-full py-12 flex justify-center"><div className="w-8 h-8 border-4 border-accent border-t-transparent rounded-full animate-spin"></div></div>
+              ) : completedMatches.map(renderMatchCard)}
+              {completedMatches.length === 0 && !loading && (
+                 <div className="col-span-full py-12 text-center text-white/20 font-black uppercase text-xs tracking-widest border border-dashed border-white/5 rounded-2xl">No Completed Matches</div>
+              )}
+          </div>
       </div>
 
       {/* Squad Management Modal */}
@@ -334,7 +358,12 @@ export default function AdminMatches() {
                             <span className="text-[10px] font-bold text-white/40 uppercase bg-white/5 px-3 py-1 rounded-full">{tempSquadA.length} / 16 Selected</span>
                         </div>
                         <div className="space-y-2 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
-                            {allPlayers.filter(p => p.team === selectedMatchForSquad.teamA).map(player => (
+                            {allPlayers.filter(p => p.team === selectedMatchForSquad.teamA)
+                                .sort((a, b) => {
+                                    const roleOrder: Record<string, number> = { "AR": 1, "WK": 2, "BAT": 3, "BOWL": 4 };
+                                    return (roleOrder[a.role] || 99) - (roleOrder[b.role] || 99);
+                                })
+                                .map(player => (
                                 <div 
                                     key={player.id} 
                                     onClick={() => togglePlayerSelection('A', player.id)}
@@ -360,7 +389,12 @@ export default function AdminMatches() {
                             <span className="text-[10px] font-bold text-white/40 uppercase bg-white/5 px-3 py-1 rounded-full">{tempSquadB.length} / 16 Selected</span>
                         </div>
                         <div className="space-y-2 max-h-[500px] overflow-y-auto pr-2 custom-scrollbar">
-                            {allPlayers.filter(p => p.team === selectedMatchForSquad.teamB).map(player => (
+                            {allPlayers.filter(p => p.team === selectedMatchForSquad.teamB)
+                                .sort((a, b) => {
+                                    const roleOrder: Record<string, number> = { "AR": 1, "WK": 2, "BAT": 3, "BOWL": 4 };
+                                    return (roleOrder[a.role] || 99) - (roleOrder[b.role] || 99);
+                                })
+                                .map(player => (
                                 <div 
                                     key={player.id} 
                                     onClick={() => togglePlayerSelection('B', player.id)}
