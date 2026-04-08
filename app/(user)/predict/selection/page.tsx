@@ -4,17 +4,20 @@ import { useEffect, useState, Suspense, useMemo } from "react";
 import { ChevronLeft, HelpCircle, Minus, Plus, Lock, Sparkles, Loader2 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { collection, onSnapshot, query, orderBy } from "firebase/firestore";
+import { collection, onSnapshot, query, orderBy, doc, updateDoc } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Match, Player } from "@/types";
+import { useUserStore } from "@/store/useStore";
 import LoadingFallback from "../../components/LoadingFallback";
 
 function PredictSelectionClient() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const matchId = searchParams.get("match");
+  const { user } = useUserStore();
 
   const [activeTab, setActiveTab] = useState("Most 6s");
+  const [saving, setSaving] = useState(false);
   
   const [predictions, setPredictions] = useState<Record<string, Record<string, number>>>({
       "Most 6s": {},
@@ -111,6 +114,44 @@ function PredictSelectionClient() {
 
   const totalForTab = Object.values(predictions[activeTab] || {}).reduce((a, b) => a + b, 0);
 
+  const totalUniquePlayers = new Set<string>();
+  Object.values(predictions).forEach(tabObj => {
+      Object.entries(tabObj).forEach(([pId, score]) => {
+          if (score > 0) totalUniquePlayers.add(pId);
+      });
+  });
+  const totalPicks = totalUniquePlayers.size;
+
+  let lockCost = 0;
+  if (totalPicks === 1) lockCost = 75;
+  else if (totalPicks === 2) lockCost = 140;
+  else if (totalPicks === 3) lockCost = 200;
+  else if (totalPicks === 4) lockCost = 250;
+  else if (totalPicks === 5) lockCost = 290;
+  else if (totalPicks >= 6) lockCost = 320;
+
+  const handleLock = async () => {
+      if (totalPicks === 0) return alert("Make at least 1 prediction.");
+      if (!user?.uid) return alert("Please log in to lock predictions.");
+      if (user.walletBalance < lockCost) {
+          return alert(`Insufficient Balance! You have ${user.walletBalance} C, but need ${lockCost} C.`);
+      }
+
+      setSaving(true);
+      try {
+          await updateDoc(doc(db, "users", user.uid), {
+             walletBalance: user.walletBalance - lockCost
+          });
+          alert(`Success! Locked ${totalPicks} prediction picks. ${lockCost} Coins deducted.`);
+          router.push("/");
+      } catch (err) {
+          console.error(err);
+          alert("Failed to pay entry fee. Try again.");
+      } finally {
+          setSaving(false);
+      }
+  };
+
   const displayedPlayers = useMemo(() => {
       let roleFilter = ["BAT", "AR", "WK", "BOWL"];
       if (activeTab === "Most 6s" || activeTab === "Most 4s") roleFilter = ["BAT", "WK", "AR"];
@@ -205,7 +246,7 @@ function PredictSelectionClient() {
                              </div>
                         </div>
                         
-                        <div className="bg-[#0F1115] border border-white/5 p-1 rounded-xl flex items-center gap-2 shrink-0 shadow-inner max-w-[110px]">
+        <div className="bg-[#0F1115] border border-white/5 p-1 rounded-xl flex items-center gap-2 shrink-0 shadow-inner max-w-[110px]">
                             <button 
                                 onClick={() => updatePrediction(player.id!, -1)}
                                 className="w-8 h-8 bg-white/5 rounded-lg flex items-center justify-center text-white/40 hover:bg-white/10 active:scale-95 transition-all outline-none"
@@ -253,19 +294,21 @@ function PredictSelectionClient() {
              <div className="flex justify-between items-center px-2">
                 <div className="flex flex-col">
                     <span className="text-[10px] text-textMuted font-bold uppercase tracking-widest mb-1 flex items-center gap-1.5"><Sparkles size={12}/> Potential Win</span>
-                    <span className="text-2xl font-black text-[#4ADE80] tracking-tighter">₹5,000</span>
+                    <span className="text-2xl font-black text-[#FFD700] tracking-tighter">{lockCost * 10} <span className="text-sm font-bold text-white/50">C</span></span>
                 </div>
                 <div className="text-right flex flex-col justify-end h-full">
-                    <span className="text-[9px] text-textMuted uppercase font-bold tracking-widest mb-1">Total Picks</span>
-                    <span className="text-lg font-black text-white px-3 border border-white/10 rounded-lg bg-white/5">{Object.keys(predictions).reduce((acc, tab) => acc + Object.values(predictions[tab] || {}).reduce((a,b)=>a+b, 0), 0)}</span>
+                    <span className="text-[9px] text-textMuted uppercase font-bold tracking-widest mb-1">Entry Fee</span>
+                    <span className="text-lg font-black text-[#FFD700] px-3 border border-accent/20 rounded-lg bg-accent/5">{lockCost} <span className="text-xs font-bold text-white/50">C</span></span>
                 </div>
              </div>
 
              <button 
-                onClick={() => router.push("/")}
-                className="w-full bg-[#7698FB] hover:bg-[#7698FB]/90 border border-[#7698FB] text-[#0F1115] font-black py-4 rounded-xl shadow-[0_5px_15px_rgba(118,152,251,0.3)] active:scale-95 transition-all flex items-center justify-center gap-3 uppercase text-xs tracking-widest"
+                onClick={handleLock}
+                disabled={saving || totalPicks === 0}
+                className="w-full bg-[#7698FB] hover:bg-[#7698FB]/90 border border-[#7698FB] text-[#0F1115] font-black py-4 rounded-xl shadow-[0_5px_15px_rgba(118,152,251,0.3)] active:scale-95 transition-all flex items-center justify-center gap-3 uppercase text-xs tracking-widest disabled:opacity-50"
              >
-                <Lock size={16} /> Lock Predictions
+                {saving ? <Loader2 size={16} className="animate-spin" /> : <Lock size={16} />} 
+                {saving ? 'Processing...' : `Lock & Pay ${lockCost} Coins`}
              </button>
           </div>
       </div>
