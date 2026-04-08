@@ -21,6 +21,7 @@ export default function AdminContests() {
   const [entryFee, setEntryFee] = useState(500);
   const [prizePool, setPrizePool] = useState("₹100k");
   const [totalSpots, setTotalSpots] = useState(5000);
+  const [type, setType] = useState("Mega");
 
   useEffect(() => {
     const unsubMatches = onSnapshot(query(collection(db, "matches"), orderBy("startTime", "desc")), (snapshot) => {
@@ -42,7 +43,7 @@ export default function AdminContests() {
 
   const resetForm = () => {
     setEditId(null);
-    setEntryFee(500); setPrizePool("₹100k"); setTotalSpots(5000);
+    setEntryFee(500); setPrizePool("₹100k"); setTotalSpots(5000); setType("Mega");
     setShowForm(false);
     setTimeout(() => setFeedback(null), 3000);
   };
@@ -53,6 +54,7 @@ export default function AdminContests() {
     setEntryFee(contest.entryFee || 500);
     setPrizePool(String(contest.prizePool || ""));
     setTotalSpots(contest.totalSpots || 5000);
+    setType((contest as any).type || "Mega");
     setShowForm(true);
   };
 
@@ -73,7 +75,8 @@ export default function AdminContests() {
         await updateDoc(doc(db, "contests", editId), {
            entryFee: Number(entryFee),
            prizePool: isNaN(Number(prizePool)) ? prizePool : Number(prizePool),
-           totalSpots: Number(totalSpots)
+           totalSpots: Number(totalSpots),
+           type
         });
         setFeedback({ type: 'success', msg: 'Contest Updated Successfully!' });
       } else {
@@ -83,6 +86,7 @@ export default function AdminContests() {
           prizePool: isNaN(Number(prizePool)) ? prizePool : Number(prizePool),
           totalSpots: Number(totalSpots),
           spotsFilled: 0,
+          type,
           createdAt: new Date().toISOString()
         });
         setFeedback({ type: 'success', msg: 'New Contest Published!' });
@@ -139,6 +143,14 @@ export default function AdminContests() {
                             <label className="text-[10px] text-textMuted uppercase tracking-widest font-bold mb-1 block">Total Spots</label>
                             <input type="number" value={totalSpots} onChange={e=>setTotalSpots(Number(e.target.value))} required className="w-full bg-[#0F1115] border border-white/5 rounded-xl px-4 py-3 text-sm focus:border-accent/50 outline-none transition-colors" />
                         </div>
+                        <div>
+                            <label className="text-[10px] text-textMuted uppercase tracking-widest font-bold mb-1 block">Contest Type</label>
+                            <select value={type} onChange={e=>setType(e.target.value)} required className="w-full bg-[#0F1115] border border-white/5 rounded-xl px-4 py-3 text-sm focus:border-accent/50 outline-none transition-colors">
+                                <option value="Mega">Mega</option>
+                                <option value="Head-to-Head">Head-to-Head</option>
+                                <option value="Winner Takes All">Winner Takes All</option>
+                            </select>
+                        </div>
                         <div className="md:col-span-2">
                             <label className="text-[10px] text-textMuted uppercase tracking-widest font-bold mb-1 block">Prize Pool Text</label>
                             <input type="text" value={prizePool} onChange={e=>setPrizePool(e.target.value)} required className="w-full bg-[#0F1115] border border-white/5 rounded-xl px-4 py-3 text-sm focus:border-accent/50 outline-none transition-colors" placeholder="e.g. ₹100k Mega" />
@@ -181,6 +193,9 @@ export default function AdminContests() {
                  </div>
 
                  <div className="mb-4">
+                     <div className="flex gap-2 items-center mb-1">
+                         <span className="text-[10px] bg-accent/20 text-accent font-bold uppercase tracking-widest px-2 py-0.5 rounded">{(contest as any).type || "Mega"}</span>
+                     </div>
                      <h3 className="text-lg font-black text-white">{contest.prizePool}</h3>
                      <p className="text-[10px] uppercase font-bold tracking-widest text-accent mt-1">Prize Pool</p>
                  </div>

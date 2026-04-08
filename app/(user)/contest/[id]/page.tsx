@@ -62,7 +62,7 @@ export default function ContestLobby() {
   useEffect(() => {
     // Strict redirect guard
     if (!loading && match && user) {
-        if (match.status !== 'Live') {
+        if (match.status === 'Upcoming') {
             if (userTeams.length === 0) {
                router.replace(`/create-team?match=${matchId}`);
             } else {
@@ -79,7 +79,7 @@ export default function ContestLobby() {
     setErrorMsg("");
     setSuccessMsg("");
     if (!user) return router.push("/login");
-    if (!match || match.status === 'Live') {
+    if (!match || match.status !== 'Upcoming') {
         return setErrorMsg("Match started! Entries locked.");
     }
     
@@ -133,8 +133,8 @@ export default function ContestLobby() {
           </button>
           <div className="text-center">
             <h1 className="text-xs font-bold uppercase tracking-widest text-textMuted">{match.teamA} vs {match.teamB}</h1>
-            <p className={`text-[10px] font-bold uppercase tracking-widest mt-0.5 ${match.status === 'Live' ? 'text-danger animate-pulse' : 'text-accent'}`}>
-                {match.status === 'Live' ? 'Live Now' : 'Upcoming'}
+            <p className={`text-[10px] font-bold uppercase tracking-widest mt-0.5 ${match.status !== 'Upcoming' ? 'text-danger animate-pulse' : 'text-accent'}`}>
+                {match.status !== 'Upcoming' ? `Match ${match.status}` : 'Upcoming'}
             </p>
           </div>
           <div className="flex items-center gap-2 bg-white/5 px-3 py-1.5 rounded-full border border-white/5 cursor-pointer hover:bg-white/10" onClick={() => router.push('/wallet')}>
@@ -197,17 +197,17 @@ export default function ContestLobby() {
                                     </div>
                                     <button 
                                         onClick={() => handleJoin(contest)}
-                                        disabled={joiningId === contest.id || match.status === 'Live'}
+                                        disabled={joiningId === contest.id || match.status !== 'Upcoming'}
                                         className={`w-full px-6 py-2.5 rounded-xl font-black text-xs shadow-xl transition-all flex items-center justify-center gap-2 ${
                                             joiningId === contest.id 
                                             ? 'bg-white/10 text-white/40 cursor-wait' 
-                                            : match.status === 'Live'
-                                            ? 'bg-blue-500/10 text-blue-400 border border-blue-500/20'
+                                            : match.status !== 'Upcoming'
+                                            ? 'bg-danger/10 text-danger border border-danger/20'
                                             : 'bg-accent text-[#0F1115] shadow-[0_5px_15px_rgba(255,215,0,0.2)] active:scale-95'
                                         }`}
                                     >
                                         {joiningId === contest.id && <Loader2 size={16} className="animate-spin" />}
-                                        {joiningId === contest.id ? "Processing..." : match.status === 'Live' ? "Details" : `Join`}
+                                        {joiningId === contest.id ? "Processing..." : match.status !== 'Upcoming' ? "Match Locked" : `Join`}
                                     </button>
                                     <p className="text-[8px] text-textMuted font-bold uppercase tracking-widest mt-1 text-center w-full">
                                         {contest.entryFee} coins used
@@ -247,7 +247,7 @@ export default function ContestLobby() {
 
       {/* Persistence Floating Bottom Bar */}
       <AnimatePresence>
-        {match.status !== 'Live' && (
+        {match.status === 'Upcoming' && (
             <motion.div 
                 initial={{ y: 100 }} 
                 animate={{ y: 0 }} 
