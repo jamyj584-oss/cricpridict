@@ -4,7 +4,7 @@ import { useEffect, useState, Suspense, useMemo } from "react";
 import { ChevronLeft, HelpCircle, Minus, Plus, Lock, Sparkles, Loader2 } from "lucide-react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { motion, AnimatePresence } from "framer-motion";
-import { collection, doc, getDoc, onSnapshot, query } from "firebase/firestore";
+import { collection, onSnapshot, query, orderBy } from "firebase/firestore";
 import { db } from "@/lib/firebase";
 import { Match, Player } from "@/types";
 import LoadingFallback from "../../components/LoadingFallback";
@@ -16,7 +16,6 @@ function PredictSelectionClient() {
 
   const [activeTab, setActiveTab] = useState("Most 6s");
   
-  // Keep predictions partitioned by Tab!
   const [predictions, setPredictions] = useState<Record<string, Record<string, number>>>({
       "Most 6s": {},
       "Most 4s": {},
@@ -30,24 +29,39 @@ function PredictSelectionClient() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (!db || !matchId) {
+    if (!db) {
         setLoading(false);
         return;
     }
 
-    const fetchMatch = async () => {
-      const mDoc = await getDoc(doc(db, "matches", matchId));
-      if (mDoc.exists()) setMatch({ id: mDoc.id, ...mDoc.data() } as Match);
-    };
-    fetchMatch();
+    const qMatches = query(collection(db, "matches"), orderBy("startTime", "asc"));
+    const unsubMatches = onSnapshot(qMatches, (snapshot) => {
+         const mData: Match[] = [];
+         snapshot.forEach(d => mData.push({ id: d.id, ...d.data() } as Match));
+         
+         let targetMatch = null;
+         if (matchId) {
+             targetMatch = mData.find(m => m.id === matchId) || null;
+         } else {
+             targetMatch = mData.find(m => m.status === 'Upcoming') || mData[0] || null;
+         }
+         
+         if (targetMatch && (!match || match.id !== targetMatch.id)) {
+            setMatch(targetMatch);
+         }
+    });
 
-    const q = query(collection(db, "players"));
-    const unsubscribe = onSnapshot(q, (snapshot) => {
+    const qPlayers = query(collection(db, "players"));
+    const unsubPlayers = onSnapshot(qPlayers, (snapshot) => {
       const data: Player[] = [];
       snapshot.forEach(doc => data.push({ id: doc.id, ...doc.data() } as Player));
       setAllPlayers(data);
     });
-    return () => unsubscribe();
+
+    return () => {
+        unsubMatches();
+        unsubPlayers();
+    };
   }, [matchId]);
 
   useEffect(() => {
@@ -66,17 +80,25 @@ function PredictSelectionClient() {
         
         setAvailablePlayers(filteredOpts);
         setLoading(false);
-    } else if (!matchId && allPlayers.length > 0) {
-        // Fallback demo mode if no match selected
-        setAvailablePlayers(allPlayers.slice(0, 10));
+    } else if (allPlayers.length > 0 && !match) {
         setLoading(false);
     }
-  }, [allPlayers, match, matchId]);
+  }, [allPlayers, match]);
 
   const updatePrediction = (playerId: string, delta: number) => {
     setPredictions(prev => {
         const currentTabScores = prev[activeTab] || {};
-        const newScore = Math.max(0, (currentTabScores[playerId] || 0) + delta);
+        const currentScore = currentTabScores[playerId] || 0;
+        const newScore = Math.max(0, currentScore + delta);
+
+        if (delta > 0 && currentScore === 0) {
+            const playersSelectedCount = Object.values(currentTabScores).filter(v => v > 0).length;
+            if (playersSelectedCount >= 6) {
+                alert("You can only predict for a maximum of 6 players per category! Increase counts of selected players or remove one first.");
+                return prev;
+            }
+        }
+
         return {
             ...prev,
             [activeTab]: {
@@ -89,7 +111,6 @@ function PredictSelectionClient() {
 
   const totalForTab = Object.values(predictions[activeTab] || {}).reduce((a, b) => a + b, 0);
 
-  // Filter players loosely based on tab (for better UX)
   const displayedPlayers = useMemo(() => {
       let roleFilter = ["BAT", "AR", "WK", "BOWL"];
       if (activeTab === "Most 6s" || activeTab === "Most 4s") roleFilter = ["BAT", "WK", "AR"];
@@ -101,7 +122,7 @@ function PredictSelectionClient() {
   if (loading) return (
      <div className="min-h-screen bg-[#0F1115] flex flex-col items-center justify-center">
          <Loader2 className="animate-spin text-accent mb-4" size={40} />
-         <p className="text-xs font-bold text-accent uppercase tracking-widest">Loading Predictions...</p>
+         <p className="text-xs font-bold text-accent uppercase tracking-widest">Loading Match Data...</p>
      </div>
   );
 
@@ -156,9 +177,11 @@ function PredictSelectionClient() {
       {/* Roster List */}
       <div className="p-4 space-y-4">
           <div className="flex justify-between items-center px-2 mb-4 border-b border-white/5 pb-2">
-              <span className="text-[10px] text-textMuted font-bold uppercase tracking-widest">Select {activeTab} Count</span>
+              <span className="text-[10px] text-textMuted font-bold uppercase tracking-widest">Select {activeTab} Picks (Max 6 Plrs)</span>
               <span className="text-[10px] font-black text-accent uppercase tracking-widest bg-accent/10 px-2.5 py-1 rounded-md border border-accent/20">Total Predicted: {totalForTab}</span>
           </div>
+
+          {!match && <p className="text-center text-xs text-textMuted p-10 uppercase tracking-widest">No active match found.</p>}
 
           {displayedPlayers.map((player) => (
               <div key={player.id} className="bg-[#161B22] border border-white/5 rounded-[1.5rem] p-4 flex items-center justify-between shadow-xl relative overflow-hidden group hover:border-white/10 transition-colors">
@@ -182,7 +205,6 @@ function PredictSelectionClient() {
                              </div>
                         </div>
                         
-                        {/* Stepper block fixed to right side */}
                         <div className="bg-[#0F1115] border border-white/5 p-1 rounded-xl flex items-center gap-2 shrink-0 shadow-inner max-w-[110px]">
                             <button 
                                 onClick={() => updatePrediction(player.id!, -1)}
@@ -226,7 +248,6 @@ function PredictSelectionClient() {
           </div>
       </div>
 
-      {/* Structured Floating Bottom Frame */}
       <div className="fixed bottom-0 left-0 right-0 max-w-md mx-auto p-4 z-50 bg-gradient-to-t from-[#0F1115] via-[#0F1115]/95 to-transparent pointer-events-none">
           <div className="bg-[#161B22]/95 backdrop-blur-xl border border-white/10 rounded-2xl p-4 shadow-2xl flex flex-col gap-4 pointer-events-auto">
              <div className="flex justify-between items-center px-2">
