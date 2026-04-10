@@ -1,9 +1,8 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { db, storage } from "@/lib/firebase";
+import { db } from "@/lib/firebase";
 import { collection, addDoc, updateDoc, deleteDoc, doc, onSnapshot, query, orderBy, serverTimestamp } from "firebase/firestore";
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import { Player, PlayerRole } from "@/types";
 import { Users, Plus, Trash2, Edit2, Star, DollarSign, ChevronRight, ArrowLeft, Image as ImageIcon, User } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
@@ -22,7 +21,6 @@ export default function AdminPlayers() {
   const [showForm, setShowForm] = useState(false);
   const [viewMode, setViewMode] = useState<"TEAMS" | "PLAYERS">("TEAMS");
   const [selectedTeamCode, setSelectedTeamCode] = useState<string | null>(null);
-  const [isUploading, setIsUploading] = useState(false);
   
   // Form State (Shared for Teams and Players)
   const [editId, setEditId] = useState<string | null>(null);
@@ -32,7 +30,7 @@ export default function AdminPlayers() {
   const [teamCode, setTeamCode] = useState("");
   const [teamLogo, setTeamLogo] = useState("");
 
-  // Player Form State
+// Player Form State
   const [playerName, setPlayerName] = useState("");
   const [playerRole, setPlayerRole] = useState<PlayerRole>("BAT");
   const [playerImage, setPlayerImage] = useState("");
@@ -66,24 +64,6 @@ export default function AdminPlayers() {
     setTeamName(""); setTeamCode(""); setTeamLogo("");
     setPlayerName(""); setPlayerRole("BAT"); setPlayerImage("");
     setShowForm(false);
-  };
-
-  const handleFileUpload = async (file: File, path: string): Promise<string | null> => {
-    if (!storage) return null;
-    setIsUploading(true);
-    try {
-      const fileName = `${Date.now()}_${file.name}`;
-      const storageRef = ref(storage, `${path}/${fileName}`);
-      await uploadBytes(storageRef, file);
-      const url = await getDownloadURL(storageRef);
-      return url;
-    } catch (err) {
-      console.error("Upload error:", err);
-      alert("Failed to upload image.");
-      return null;
-    } finally {
-      setIsUploading(false);
-    }
   };
 
   const handleEditTeam = (team: Team) => {
@@ -148,7 +128,7 @@ export default function AdminPlayers() {
 
   const roleOrder: Record<string, number> = { "AR": 1, "WK": 2, "BAT": 3, "BOWL": 4 };
   const currentTeamPlayers = players
-    .filter(p => p.team === selectedTeamCode)
+    .filter(p => p.role && p.team === selectedTeamCode)
     .sort((a, b) => (roleOrder[a.role] || 99) - (roleOrder[b.role] || 99));
   const selectedTeamData = teams.find(t => t.code === selectedTeamCode);
 
@@ -193,36 +173,14 @@ export default function AdminPlayers() {
                             </div>
                             <div>
                                 <label className="text-[10px] text-textMuted uppercase tracking-widest font-black mb-2 block flex items-center gap-2">
-                                    <ImageIcon size={12} /> Team Logo
+                                    <ImageIcon size={12} /> Team Logo URL
                                 </label>
-                                <div className="flex flex-col gap-3">
-                                    {teamLogo && (
-                                        <div className="w-16 h-16 rounded-xl bg-[#0F1115] border border-white/10 flex items-center justify-center overflow-hidden">
-                                            <img src={teamLogo} className="w-full h-full object-contain p-1" />
-                                        </div>
-                                    )}
-                                    <label className="cursor-pointer bg-[#0F1115] border border-white/5 hover:border-accent/30 rounded-2xl px-5 py-4 text-xs font-bold text-textMuted flex items-center gap-3 transition-colors">
-                                        <Plus size={14} className="text-accent" />
-                                        {isUploading ? "Uploading..." : (teamLogo ? "Change Logo" : "Upload PNG/JPG")}
-                                        <input 
-                                            type="file" 
-                                            accept="image/*" 
-                                            className="hidden" 
-                                            onChange={async (e) => {
-                                                const file = e.target.files?.[0];
-                                                if (file) {
-                                                    const url = await handleFileUpload(file, 'teams');
-                                                    if (url) setTeamLogo(url);
-                                                }
-                                            }}
-                                        />
-                                    </label>
-                                </div>
+                                <input type="text" value={teamLogo} onChange={e=>setTeamLogo(e.target.value)} className="w-full bg-[#0F1115] border border-white/5 rounded-2xl px-5 py-4 text-sm focus:border-accent/50 outline-none transition-colors" placeholder="https://..." />
                             </div>
                             <div className="md:col-span-3 flex justify-end gap-3 mt-4 border-t border-white/5 pt-6">
                                 <button type="button" onClick={resetForms} className="px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest text-textMuted hover:text-white transition-colors">Cancel</button>
-                                <button type="submit" disabled={isUploading} className="px-10 py-4 bg-accent text-[#0F1115] rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all disabled:opacity-50">
-                                    {isUploading ? 'Waiting for Upload...' : (editId ? 'Update Team' : 'Publish Team')}
+                                <button type="submit" className="px-10 py-4 bg-accent text-[#0F1115] rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all">
+                                    {editId ? 'Update Team' : 'Publish Team'}
                                 </button>
                             </div>
                         </form>
@@ -241,38 +199,16 @@ export default function AdminPlayers() {
                                     <option value="WK">WICKET-KEEPER</option>
                                 </select>
                             </div>
-                            <div className="lg:col-span-2">
+                            <div>
                                 <label className="text-[10px] text-textMuted uppercase tracking-widest font-black mb-2 block flex items-center gap-2">
-                                    <ImageIcon size={12} /> Athlete Photo
+                                    <ImageIcon size={12} /> Athlete Photo URL
                                 </label>
-                                <div className="flex flex-row items-center gap-4">
-                                    {playerImage && (
-                                        <div className="w-14 h-14 rounded-2xl bg-[#0F1115] border border-white/10 flex items-center justify-center overflow-hidden shrink-0">
-                                            <img src={playerImage} className="w-full h-full object-cover" />
-                                        </div>
-                                    )}
-                                    <label className="flex-1 cursor-pointer bg-[#0F1115] border border-white/5 hover:border-accent/30 rounded-2xl px-5 py-4 text-xs font-bold text-textMuted flex items-center gap-3 transition-colors">
-                                        <Plus size={14} className="text-accent" />
-                                        {isUploading ? "Uploading..." : (playerImage ? "Change Image" : "Select from Files")}
-                                        <input 
-                                            type="file" 
-                                            accept="image/*" 
-                                            className="hidden" 
-                                            onChange={async (e) => {
-                                                const file = e.target.files?.[0];
-                                                if (file) {
-                                                    const url = await handleFileUpload(file, 'players');
-                                                    if (url) setPlayerImage(url);
-                                                }
-                                            }}
-                                        />
-                                    </label>
-                                </div>
+                                <input type="text" value={playerImage} onChange={e=>setPlayerImage(e.target.value)} className="w-full bg-[#0F1115] border border-white/5 rounded-2xl px-5 py-4 text-sm focus:border-accent/50 outline-none transition-colors" placeholder="https://..." />
                             </div>
                             <div className="md:col-span-3 flex justify-end gap-3 mt-4 border-t border-white/5 pt-6">
                                 <button type="button" onClick={resetForms} className="px-6 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest text-textMuted hover:text-white transition-colors">Discard</button>
-                                <button type="submit" disabled={isUploading} className="px-10 py-4 bg-accent text-[#0F1115] rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all disabled:opacity-50">
-                                    {isUploading ? 'Uploading...' : (editId ? 'Save Changes' : 'Onboard Player')}
+                                <button type="submit" className="px-10 py-4 bg-accent text-[#0F1115] rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl active:scale-95 transition-all">
+                                    {editId ? 'Save Changes' : 'Onboard Player'}
                                 </button>
                             </div>
                         </form>
